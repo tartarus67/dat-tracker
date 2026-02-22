@@ -8,8 +8,12 @@
 - [x] Create crypto assets section with price tracking (1d/7d/30d %)
 - [x] Add category filtering (Majors vs Alts)
 - [x] Add sorting functionality to tables
-- [ ] Build daily summary report generation endpoint
-- [ ] Implement email notification system (victor.x@aethir.com)
-- [ ] Implement Telegram notification system (@nvxin)
+- [x] Build daily summary report generation endpoint
+- [ ] Implement email notification system (victor.x@aethir.com) [pending API key]
+- [ ] Implement Telegram notification system (@nvxin) [pending bot token]
 - [x] Add auto-refresh mechanism for live data (5-min interval)
-- [ ] Write vitest tests for API routes
+- [x] Write vitest tests for API routes
+- [x] Build report generation logic (daily summary format)
+- [x] Add tRPC endpoint to trigger report manually
+- [x] Send first test report via Manus built-in notification
+- [ ] Add report page to view reports in the dashboard

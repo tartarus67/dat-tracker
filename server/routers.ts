@@ -4,6 +4,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { fetchAllStockData, fetchAllCryptoData } from "./datData";
+import { buildReportData, generateReportTitle, generateReportContent } from "./reportGenerator";
+import { notifyOwner } from "./_core/notification";
 
 // In-memory cache with TTL
 type CacheEntry<T> = { data: T; timestamp: number };
@@ -67,6 +69,30 @@ export const appRouter = router({
       const result = { stocks, crypto, lastUpdated: Date.now() };
       setCache("dashboardData", result);
       return result;
+    }),
+
+    /** Generate and return a daily summary report */
+    generateReport: publicProcedure.query(async () => {
+      const reportData = await buildReportData();
+      const title = generateReportTitle(reportData);
+      const content = generateReportContent(reportData);
+      return { title, content, data: reportData };
+    }),
+
+    /** Generate report and send via Manus notification */
+    sendReport: publicProcedure.mutation(async () => {
+      const reportData = await buildReportData();
+      const title = generateReportTitle(reportData);
+      const content = generateReportContent(reportData);
+
+      const sent = await notifyOwner({ title, content });
+
+      return {
+        success: sent,
+        title,
+        content,
+        generatedAt: reportData.generatedAt,
+      };
     }),
   }),
 });
