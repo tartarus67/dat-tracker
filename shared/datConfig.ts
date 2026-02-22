@@ -1,0 +1,72 @@
+/** DAT company and crypto asset configuration */
+
+export type DATCompany = {
+  company: string;
+  ticker: string;
+  category: "Majors" | "Alts";
+  datAsset: string;
+  cryptoYahooSymbol: string;
+};
+
+export type CryptoAsset = {
+  symbol: string;
+  name: string;
+  yahooSymbol: string;
+};
+
+export const DAT_COMPANIES: DATCompany[] = [
+  { company: "Forward Industries", ticker: "FORD", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD" },
+  { company: "DeFi Development", ticker: "DFDV", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD" },
+  { company: "Upexi", ticker: "UPXI", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD" },
+  { company: "Bitcoin Standard Treasury Co.", ticker: "CEPO", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Strategy (MicroStrategy)", ticker: "MSTR", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Tron Inc", ticker: "TRON", category: "Alts", datAsset: "TRX", cryptoYahooSymbol: "TRX-USD" },
+  { company: "Metaplanet Inc.", ticker: "MTPLF", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "MARA Holdings", ticker: "MARA", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Coinbase Global", ticker: "COIN", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Bullish", ticker: "BLSH", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Riot Platforms", ticker: "RIOT", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "CleanSpark", ticker: "CLSK", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Hut 8 Mining", ticker: "HUT", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Bitmine", ticker: "BMNR", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD" },
+  { company: "Bitdigital", ticker: "BTBT", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD" },
+  { company: "SharpLink Gaming", ticker: "SBET", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Helius Medical", ticker: "HSDT", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD" },
+  { company: "SOL Strategies", ticker: "STKE", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD" },
+  { company: "Twenty-One Capital", ticker: "XXI", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "TAO Synergies", ticker: "TAOX", category: "Alts", datAsset: "TAO", cryptoYahooSymbol: "TAO22974-USD" },
+  { company: "ATIF Holdings", ticker: "ZBAI", category: "Alts", datAsset: "DOGE", cryptoYahooSymbol: "DOGE-USD" },
+  { company: "Hyperscale Data", ticker: "GPUS", category: "Alts", datAsset: "XRP", cryptoYahooSymbol: "XRP-USD" },
+  { company: "IP Strategy", ticker: "IPST", category: "Alts", datAsset: "IP", cryptoYahooSymbol: "IP-USD" },
+  { company: "CEA Industries", ticker: "BNC", category: "Alts", datAsset: "BNB", cryptoYahooSymbol: "BNB-USD" },
+  { company: "Sharps Technology", ticker: "STSS", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD" },
+  { company: "SUI Group Holdings", ticker: "SUIG", category: "Alts", datAsset: "SUI", cryptoYahooSymbol: "SUI20947-USD" },
+  { company: "GD Culture", ticker: "GDC", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD" },
+  { company: "Eightco Holdings", ticker: "ORBS", category: "Alts", datAsset: "WLD", cryptoYahooSymbol: "WLD-USD" },
+  { company: "Predictive Oncology", ticker: "AGPU", category: "Alts", datAsset: "ATH", cryptoYahooSymbol: "ATH-USD" },
+  { company: "AlphaTON Capital", ticker: "ATON", category: "Alts", datAsset: "TON", cryptoYahooSymbol: "TON11419-USD" },
+  { company: "Zero Stack", ticker: "ZSTK", category: "Alts", datAsset: "0G", cryptoYahooSymbol: "0G-USD" },
+];
+
+export const CRYPTO_ASSETS: CryptoAsset[] = [
+  { symbol: "BTC", name: "Bitcoin", yahooSymbol: "BTC-USD" },
+  { symbol: "ETH", name: "Ethereum", yahooSymbol: "ETH-USD" },
+  { symbol: "SOL", name: "Solana", yahooSymbol: "SOL-USD" },
+  { symbol: "TAO", name: "Bittensor", yahooSymbol: "TAO22974-USD" },
+  { symbol: "WLD", name: "Worldcoin", yahooSymbol: "WLD-USD" },
+  { symbol: "IP", name: "Story Protocol", yahooSymbol: "IP-USD" },
+  { symbol: "ATH", name: "Aethir", yahooSymbol: "ATH-USD" },
+  { symbol: "BNB", name: "BNB", yahooSymbol: "BNB-USD" },
+  { symbol: "SUI", name: "Sui", yahooSymbol: "SUI20947-USD" },
+  { symbol: "XRP", name: "XRP", yahooSymbol: "XRP-USD" },
+  { symbol: "TRX", name: "Tron", yahooSymbol: "TRX-USD" },
+  { symbol: "DOGE", name: "Dogecoin", yahooSymbol: "DOGE-USD" },
+  { symbol: "0G", name: "0G", yahooSymbol: "0G-USD" },
+  { symbol: "TON", name: "Toncoin", yahooSymbol: "TON11419-USD" },
+];
+
+/** Unique set of stock tickers */
+export const ALL_STOCK_TICKERS = DAT_COMPANIES.map(c => c.ticker);
+
+/** Unique set of Yahoo crypto symbols */
+export const ALL_CRYPTO_YAHOO_SYMBOLS = Array.from(new Set(CRYPTO_ASSETS.map(c => c.yahooSymbol)));
