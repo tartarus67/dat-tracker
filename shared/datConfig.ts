@@ -26,32 +26,32 @@ export const DAT_COMPANIES: DATCompany[] = [
   { company: "Upexi", ticker: "UPXI", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD", holdings: 630000 },
   { company: "Bitcoin Standard Treasury Co.", ticker: "CEPO", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 30021 },
   { company: "Strategy (MicroStrategy)", ticker: "MSTR", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 641692 },
-  { company: "Tron Inc", ticker: "TRON", category: "Alts", datAsset: "TRX", cryptoYahooSymbol: "TRX-USD", holdings: 0 },
+  { company: "Tron Inc", ticker: "TRON", category: "Alts", datAsset: "TRX", cryptoYahooSymbol: "TRX-USD", holdings: 677596945 },
   { company: "Metaplanet Inc.", ticker: "MTPLF", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 30823 },
   { company: "MARA Holdings", ticker: "MARA", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 53250 },
   { company: "Coinbase Global", ticker: "COIN", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 14548 },
   { company: "Bullish", ticker: "BLSH", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 24300 },
   { company: "Riot Platforms", ticker: "RIOT", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 19324 },
-  { company: "CleanSpark", ticker: "CLSK", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 13011 },
+  { company: "Tesla", ticker: "TSLA", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 11509 },
   { company: "Hut 8 Mining", ticker: "HUT", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 13696 },
-  { company: "Bitmine", ticker: "BMNR", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD", holdings: 0 },
-  { company: "Bitdigital", ticker: "BTBT", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD", holdings: 0 },
-  { company: "SharpLink Gaming", ticker: "SBET", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 401 },
-  { company: "Helius Medical", ticker: "HSDT", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD", holdings: 0 },
+  { company: "Bitmine", ticker: "BMNR", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD", holdings: 0 }, // holdings not disclosed
+  { company: "Bitdigital", ticker: "BTBT", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD", holdings: 154399 },
+  { company: "SharpLink Gaming", ticker: "SBET", category: "Majors", datAsset: "ETH", cryptoYahooSymbol: "ETH-USD", holdings: 859853 },
+  { company: "Helius Medical", ticker: "HSDT", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD", holdings: 0 }, // holdings not disclosed
   { company: "SOL Strategies", ticker: "STKE", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD", holdings: 189968 },
   { company: "Twenty-One Capital", ticker: "XXI", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 43514 },
-  { company: "TAO Synergies", ticker: "TAOX", category: "Alts", datAsset: "TAO", cryptoYahooSymbol: "TAO22974-USD", holdings: 0 },
-  { company: "ATIF Holdings", ticker: "ZBAI", category: "Alts", datAsset: "DOGE", cryptoYahooSymbol: "DOGE-USD", holdings: 0 },
-  { company: "Hyperscale Data", ticker: "GPUS", category: "Alts", datAsset: "XRP", cryptoYahooSymbol: "XRP-USD", holdings: 0 },
+  { company: "TAO Synergies", ticker: "TAOX", category: "Alts", datAsset: "TAO", cryptoYahooSymbol: "TAO22974-USD", holdings: 54000 },
+  { company: "ATIF Holdings", ticker: "ZBAI", category: "Alts", datAsset: "DOGE", cryptoYahooSymbol: "DOGE-USD", holdings: 0 }, // holdings not disclosed
+  { company: "Hyperscale Data", ticker: "GPUS", category: "Alts", datAsset: "XRP", cryptoYahooSymbol: "XRP-USD", holdings: 0 }, // holdings not disclosed
   { company: "IP Strategy", ticker: "IPST", category: "Alts", datAsset: "IP", cryptoYahooSymbol: "IP-USD", holdings: 0 },
-  { company: "CEA Industries", ticker: "BNC", category: "Alts", datAsset: "BNB", cryptoYahooSymbol: "BNB-USD", holdings: 0 },
-  { company: "Sharps Technology", ticker: "STSS", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD", holdings: 0 },
-  { company: "SUI Group Holdings", ticker: "SUIG", category: "Alts", datAsset: "SUI", cryptoYahooSymbol: "SUI20947-USD", holdings: 0 },
-  { company: "GD Culture", ticker: "GDC", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 200 },
-  { company: "Eightco Holdings", ticker: "ORBS", category: "Alts", datAsset: "WLD", cryptoYahooSymbol: "WLD-USD", holdings: 0 },
-  { company: "Predictive Oncology", ticker: "AGPU", category: "Alts", datAsset: "ATH", cryptoYahooSymbol: "ATH-USD", holdings: 0 },
-  { company: "AlphaTON Capital", ticker: "ATON", category: "Alts", datAsset: "TON", cryptoYahooSymbol: "TON11419-USD", holdings: 0 },
-  { company: "Zero Stack", ticker: "ZSTK", category: "Alts", datAsset: "0G", cryptoYahooSymbol: "0G-USD", holdings: 0 },
+  { company: "CEA Industries", ticker: "BNC", category: "Alts", datAsset: "BNB", cryptoYahooSymbol: "BNB-USD", holdings: 515054 },
+  { company: "Sharps Technology", ticker: "STSS", category: "Majors", datAsset: "SOL", cryptoYahooSymbol: "SOL-USD", holdings: 2000000 },
+  { company: "SUI Group Holdings", ticker: "SUIG", category: "Alts", datAsset: "SUI", cryptoYahooSymbol: "SUI20947-USD", holdings: 105393693 },
+  { company: "GD Culture", ticker: "GDC", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 7500 },
+  { company: "Eightco Holdings", ticker: "ORBS", category: "Alts", datAsset: "WLD", cryptoYahooSymbol: "WLD-USD", holdings: 272253898 },
+  { company: "Predictive Oncology", ticker: "AGPU", category: "Alts", datAsset: "ATH", cryptoYahooSymbol: "ATH-USD", holdings: 4961016949 },
+  { company: "AlphaTON Capital", ticker: "ATON", category: "Alts", datAsset: "TON", cryptoYahooSymbol: "TON11419-USD", holdings: 0 }, // holdings not disclosed
+  { company: "Zero Stack", ticker: "ZSTK", category: "Alts", datAsset: "0G", cryptoYahooSymbol: "0G-USD", holdings: 122538335 },
 ];
 
 export const CRYPTO_ASSETS: CryptoAsset[] = [
@@ -76,3 +76,6 @@ export const ALL_STOCK_TICKERS = DAT_COMPANIES.map(c => c.ticker);
 
 /** Unique set of Yahoo crypto symbols */
 export const ALL_CRYPTO_YAHOO_SYMBOLS = Array.from(new Set(CRYPTO_ASSETS.map(c => c.yahooSymbol)));
+
+/** Unique set of crypto symbols (for CMC API) */
+export const ALL_CRYPTO_SYMBOLS = CRYPTO_ASSETS.map(c => c.symbol);

@@ -1,15 +1,16 @@
 # Dashboard Status - Mar 5 2026
 
-## Latest Screenshot (03:42 AM)
-- All 19 columns visible matching spreadsheet: Cat, Ticker, Asset, Price, 1D%, 7D%, 30D%, Token $, Token 7D%, Token 30D%, MCAP ($M), NAV ($M), mNAV, Vol (24h), Vol 1D%, Vol 7D Avg, Vol 7D%, Vol 30D Avg, Vol 30D%
-- Group headers: Company Info, Stock Price, Token Price, Valuation, Volume
-- 31 companies showing, 28 gainers, 2 losers
-- Total NAV $64.2B (correct for BTC holdings)
-- Token prices correct (BTC $72,404, ETH $2,111, SOL $89.91)
-- NAV showing for companies with known holdings
-- Report button in header works
+## Latest Screenshot (04:24 AM)
+- Dashboard fully loaded with all 31 companies
+- All 19 columns visible: Cat, Ticker, Asset, Price, 1D%, 7D%, 30D%, Token $, Token 7D%, Token 30D%, MCAP, NAV, mNAV, Vol 24h, 1D%, 7D Avg, 7D%, 30D Avg, 30D%
+- Column filter dropdowns visible on each header (ChevronDown icons)
+- Category filter buttons working: All / Majors / Alts
+- "Crypto Treasury NAV" link in header
+- "Report" button in header
+- Summary stats: 31 companies, +9.67% avg 1d, $145.2B MCAP, $68.0B NAV, 14 crypto assets
+- Token prices from CMC working correctly (BTC $72,661, ETH $2,128, SOL $90.09, ATH $0.006493)
+- NAV calculated correctly for companies with holdings
+- mNAV showing (e.g., MSTR 1.05x, COIN 53.30x)
 
-## Issues
-1. MCAP cache was stale (yfinance reinstalled, cache regenerating now)
-2. Unicode escape in subtext needs fix
-3. Table is wide - all columns visible via horizontal scroll
+## Issue: Unicode escape in "Holdings \u00D7 Token Price" still showing
+- Need to fix the unicode escape in the Total NAV stat card

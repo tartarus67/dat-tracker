@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +13,14 @@ import {
   Bitcoin,
   Activity,
   Send,
+  ChevronDown,
+  ArrowUpAZ,
+  ArrowDownAZ,
+  ArrowUp01,
+  ArrowDown01,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "wouter";
 
 type SortField = "company" | "ticker" | "price" | "change1d" | "change7d" | "change30d" | "vol24h" | "datAsset" | "mcap" | "nav" | "mNAV" | "tokenPrice" | "tokenPrice7d" | "tokenPrice30d" | "vol1dPct" | "vol7dAvg" | "vol7dPct" | "vol30dAvg" | "vol30dPct";
 type SortDir = "asc" | "desc";
@@ -55,6 +61,71 @@ function PctCell({ value }: { value: number }) {
       {isPositive ? <ArrowUpRight className="h-2.5 w-2.5 shrink-0" /> : <ArrowDownRight className="h-2.5 w-2.5 shrink-0" />}
       {formatPct(value)}
     </span>
+  );
+}
+
+/** Google Sheets-style column filter dropdown */
+function ColumnFilter({
+  field,
+  label,
+  currentSort,
+  onSort,
+  isText,
+  align = "right",
+}: {
+  field: string;
+  label: string;
+  currentSort: { field: string; dir: SortDir };
+  onSort: (field: string, dir: SortDir) => void;
+  isText?: boolean;
+  align?: "left" | "right";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isActive = currentSort.field === field;
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className={`relative inline-flex ${align === "right" ? "justify-end" : ""}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-0.5 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap transition-colors ${
+          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {label}
+        <ChevronDown className={`h-2.5 w-2.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className={`absolute top-full mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[140px] ${align === "right" ? "right-0" : "left-0"}`}>
+          <button
+            onClick={() => { onSort(field, "asc"); setOpen(false); }}
+            className={`w-full px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-accent transition-colors ${
+              isActive && currentSort.dir === "asc" ? "text-primary" : "text-foreground"
+            }`}
+          >
+            {isText ? <ArrowUpAZ className="h-3.5 w-3.5" /> : <ArrowUp01 className="h-3.5 w-3.5" />}
+            Sort {isText ? "A\u2013Z" : "Low \u2192 High"}
+          </button>
+          <button
+            onClick={() => { onSort(field, "desc"); setOpen(false); }}
+            className={`w-full px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-accent transition-colors ${
+              isActive && currentSort.dir === "desc" ? "text-primary" : "text-foreground"
+            }`}
+          >
+            {isText ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowDown01 className="h-3.5 w-3.5" />}
+            Sort {isText ? "Z\u2013A" : "High \u2192 Low"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -107,9 +178,17 @@ export default function Dashboard() {
     },
   });
 
-  const [stockSort, setStockSort] = useState<{ field: SortField; dir: SortDir }>({ field: "ticker", dir: "asc" });
+  const [stockSort, setStockSort] = useState<{ field: string; dir: SortDir }>({ field: "ticker", dir: "asc" });
   const [cryptoSort, setCryptoSort] = useState<{ field: string; dir: SortDir }>({ field: "symbol", dir: "asc" });
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+
+  const handleStockSort = (field: string, dir: SortDir) => {
+    setStockSort({ field, dir });
+  };
+
+  const handleCryptoSort = (field: string, dir: SortDir) => {
+    setCryptoSort({ field, dir });
+  };
 
   const filteredStocks = useMemo(() => {
     if (!data?.stocks) return [];
@@ -144,20 +223,6 @@ export default function Dashboard() {
     return items;
   }, [data?.crypto, cryptoSort]);
 
-  const toggleStockSort = (field: SortField) => {
-    setStockSort(prev => ({
-      field,
-      dir: prev.field === field && prev.dir === "asc" ? "desc" : "asc",
-    }));
-  };
-
-  const toggleCryptoSort = (field: string) => {
-    setCryptoSort(prev => ({
-      field,
-      dir: prev.field === field && prev.dir === "asc" ? "desc" : "asc",
-    }));
-  };
-
   if (isLoading) return <LoadingSkeleton />;
 
   const stocks = data?.stocks || [];
@@ -166,22 +231,6 @@ export default function Dashboard() {
   const avgChange1d = stocks.length > 0 ? stocks.reduce((sum, s) => sum + s.change1d, 0) / stocks.length : 0;
   const gainers = stocks.filter(s => s.change1d > 0).length;
   const losers = stocks.filter(s => s.change1d < 0).length;
-
-  const SortIcon = ({ field, currentSort }: { field: string; currentSort: { field: string; dir: SortDir } }) => {
-    if (currentSort.field !== field) return <span className="text-muted-foreground/30 ml-0.5">&#x25B4;</span>;
-    return <span className="text-primary ml-0.5">{currentSort.dir === "asc" ? "\u25B4" : "\u25BE"}</span>;
-  };
-
-  // Column header helper
-  const TH = ({ field, label, sort, toggle, align = "right", colSpan }: { field: string; label: string; sort: { field: string; dir: SortDir }; toggle: (f: string) => void; align?: string; colSpan?: number }) => (
-    <th
-      colSpan={colSpan}
-      className={`px-2 py-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground whitespace-nowrap ${align === "left" ? "text-left" : "text-right"}`}
-      onClick={() => toggle(field)}
-    >
-      {label} <SortIcon field={field} currentSort={sort} />
-    </th>
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,6 +247,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/nav" className="h-8 px-3 rounded-md border border-border flex items-center gap-1.5 text-xs hover:bg-accent transition-colors">
+              Crypto Treasury NAV
+            </Link>
             {data?.lastUpdated && (
               <span className="text-xs text-muted-foreground font-mono">
                 Updated {new Date(data.lastUpdated).toLocaleTimeString()}
@@ -246,7 +298,7 @@ export default function Dashboard() {
             label="Total NAV"
             value={totalNav > 0 ? formatMcap(totalNav) : "\u2014"}
             icon={TrendingUp}
-            subtext={"Holdings \u00D7 Token Price"}
+            subtext="Holdings × Token Price"
           />
           <StatCard
             label="Crypto Assets"
@@ -289,7 +341,7 @@ export default function Dashboard() {
               </span>
             </div>
 
-            {/* Stock Table — matches spreadsheet columns exactly */}
+            {/* Stock Table */}
             <div className="border border-border rounded-lg overflow-hidden bg-card">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -302,27 +354,63 @@ export default function Dashboard() {
                       <th colSpan={3} className="px-2 py-1.5 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-r border-border/50">Valuation</th>
                       <th colSpan={6} className="px-2 py-1.5 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Volume</th>
                     </tr>
-                    {/* Column headers */}
+                    {/* Column headers with filter dropdowns */}
                     <tr className="border-b border-border bg-muted/30">
                       <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-10">Cat</th>
-                      <TH field="ticker" label="Ticker" sort={stockSort} toggle={toggleStockSort as (f: string) => void} align="left" />
-                      <TH field="datAsset" label="Asset" sort={stockSort} toggle={toggleStockSort as (f: string) => void} align="left" />
-                      <TH field="price" label="Price ($)" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="change1d" label="1D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="change7d" label="7D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="change30d" label="30D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="tokenPrice" label="Token $" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="tokenPrice7d" label="7D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="tokenPrice30d" label="30D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="mcap" label="MCAP ($M)" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="nav" label="NAV ($M)" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="mNAV" label="mNAV" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="vol24h" label="Vol (24h)" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="vol1dPct" label="1D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="vol7dAvg" label="7D Avg" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="vol7dPct" label="7D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="vol30dAvg" label="30D Avg" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
-                      <TH field="vol30dPct" label="30D %" sort={stockSort} toggle={toggleStockSort as (f: string) => void} />
+                      <th className="px-2 py-2 text-left">
+                        <ColumnFilter field="ticker" label="Ticker" currentSort={stockSort} onSort={handleStockSort} isText align="left" />
+                      </th>
+                      <th className="px-2 py-2 text-left">
+                        <ColumnFilter field="datAsset" label="Asset" currentSort={stockSort} onSort={handleStockSort} isText align="left" />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="price" label="Price ($)" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="change1d" label="1D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="change7d" label="7D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="change30d" label="30D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="tokenPrice" label="Token $" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="tokenPrice7d" label="7D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="tokenPrice30d" label="30D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="mcap" label="MCAP ($M)" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="nav" label="NAV ($M)" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="mNAV" label="mNAV" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="vol24h" label="Vol (24h)" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="vol1dPct" label="1D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="vol7dAvg" label="7D Avg" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="vol7dPct" label="7D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="vol30dAvg" label="30D Avg" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
+                      <th className="px-2 py-2 text-right">
+                        <ColumnFilter field="vol30dPct" label="30D %" currentSort={stockSort} onSort={handleStockSort} />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -331,69 +419,50 @@ export default function Dashboard() {
                         key={stock.ticker}
                         className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
                       >
-                        {/* Category */}
                         <td className="px-2 py-2">
                           <Badge variant={stock.category === "Majors" ? "default" : "secondary"} className="text-[9px] px-1 py-0">
                             {stock.category}
                           </Badge>
                         </td>
-                        {/* Ticker */}
                         <td className="px-2 py-2">
                           <span className="font-mono font-semibold text-primary text-xs">{stock.ticker}</span>
                         </td>
-                        {/* DAT Asset */}
                         <td className="px-2 py-2">
                           <span className="font-mono text-[10px] text-warning">{stock.datAsset}</span>
                         </td>
-                        {/* Price */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs">{formatPrice(stock.price)}</span>
                         </td>
-                        {/* Price 1D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.change1d} /></td>
-                        {/* Price 7D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.change7d} /></td>
-                        {/* Price 30D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.change30d} /></td>
-                        {/* Token Price */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs text-warning">{formatPrice(stock.tokenPrice)}</span>
                         </td>
-                        {/* Token 7D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.tokenPrice7d} /></td>
-                        {/* Token 30D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.tokenPrice30d} /></td>
-                        {/* MCAP */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs">{stock.mcap > 0 ? formatMcap(stock.mcap) : "\u2014"}</span>
                         </td>
-                        {/* NAV */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs">{stock.nav > 0 ? formatMcap(stock.nav) : "\u2014"}</span>
                         </td>
-                        {/* mNAV */}
                         <td className="px-2 py-2 text-right">
                           <span className={`font-mono tabular-nums text-xs ${stock.mNAV > 1 ? "text-positive" : stock.mNAV > 0 ? "text-negative" : "text-muted-foreground"}`}>
                             {stock.mNAV > 0 ? `${stock.mNAV.toFixed(2)}x` : "\u2014"}
                           </span>
                         </td>
-                        {/* Vol 24h */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol24h)}</span>
                         </td>
-                        {/* Vol 1D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.vol1dPct} /></td>
-                        {/* Vol 7D Avg */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol7dAvg)}</span>
                         </td>
-                        {/* Vol 7D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.vol7dPct} /></td>
-                        {/* Vol 30D Avg */}
                         <td className="px-2 py-2 text-right">
                           <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol30dAvg)}</span>
                         </td>
-                        {/* Vol 30D% */}
                         <td className="px-2 py-2 text-right"><PctCell value={stock.vol30dPct} /></td>
                       </tr>
                     ))}
@@ -410,38 +479,54 @@ export default function Dashboard() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      <TH field="symbol" label="Symbol" sort={cryptoSort} toggle={toggleCryptoSort} align="left" />
-                      <TH field="name" label="Name" sort={cryptoSort} toggle={toggleCryptoSort} align="left" />
-                      <TH field="price" label="Price ($)" sort={cryptoSort} toggle={toggleCryptoSort} />
-                      <TH field="change1d" label="1D %" sort={cryptoSort} toggle={toggleCryptoSort} />
-                      <TH field="change7d" label="7D %" sort={cryptoSort} toggle={toggleCryptoSort} />
-                      <TH field="change30d" label="30D %" sort={cryptoSort} toggle={toggleCryptoSort} />
-                      <TH field="volume" label="Volume (24h)" sort={cryptoSort} toggle={toggleCryptoSort} />
-                      <TH field="marketCap" label="Market Cap" sort={cryptoSort} toggle={toggleCryptoSort} />
+                      <th className="px-3 py-2.5 text-left">
+                        <ColumnFilter field="symbol" label="Symbol" currentSort={cryptoSort} onSort={handleCryptoSort} isText align="left" />
+                      </th>
+                      <th className="px-3 py-2.5 text-left">
+                        <ColumnFilter field="name" label="Name" currentSort={cryptoSort} onSort={handleCryptoSort} isText align="left" />
+                      </th>
+                      <th className="px-3 py-2.5 text-right">
+                        <ColumnFilter field="price" label="Price ($)" currentSort={cryptoSort} onSort={handleCryptoSort} />
+                      </th>
+                      <th className="px-3 py-2.5 text-right">
+                        <ColumnFilter field="change1d" label="1D %" currentSort={cryptoSort} onSort={handleCryptoSort} />
+                      </th>
+                      <th className="px-3 py-2.5 text-right">
+                        <ColumnFilter field="change7d" label="7D %" currentSort={cryptoSort} onSort={handleCryptoSort} />
+                      </th>
+                      <th className="px-3 py-2.5 text-right">
+                        <ColumnFilter field="change30d" label="30D %" currentSort={cryptoSort} onSort={handleCryptoSort} />
+                      </th>
+                      <th className="px-3 py-2.5 text-right">
+                        <ColumnFilter field="volume" label="Volume (24h)" currentSort={cryptoSort} onSort={handleCryptoSort} />
+                      </th>
+                      <th className="px-3 py-2.5 text-right">
+                        <ColumnFilter field="marketCap" label="Market Cap" currentSort={cryptoSort} onSort={handleCryptoSort} />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedCrypto.map((crypto, idx) => (
                       <tr
-                        key={crypto.yahooSymbol}
+                        key={crypto.symbol}
                         className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
                       >
-                        <td className="px-2 py-2.5">
+                        <td className="px-3 py-2.5">
                           <span className="font-mono font-semibold text-warning text-xs">{crypto.symbol}</span>
                         </td>
-                        <td className="px-2 py-2.5">
+                        <td className="px-3 py-2.5">
                           <span className="text-foreground text-xs">{crypto.name}</span>
                         </td>
-                        <td className="px-2 py-2.5 text-right">
+                        <td className="px-3 py-2.5 text-right">
                           <span className="font-mono tabular-nums text-xs">{formatPrice(crypto.price)}</span>
                         </td>
-                        <td className="px-2 py-2.5 text-right"><PctCell value={crypto.change1d} /></td>
-                        <td className="px-2 py-2.5 text-right"><PctCell value={crypto.change7d} /></td>
-                        <td className="px-2 py-2.5 text-right"><PctCell value={crypto.change30d} /></td>
-                        <td className="px-2 py-2.5 text-right">
+                        <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change1d} /></td>
+                        <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change7d} /></td>
+                        <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change30d} /></td>
+                        <td className="px-3 py-2.5 text-right">
                           <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(crypto.volume)}</span>
                         </td>
-                        <td className="px-2 py-2.5 text-right">
+                        <td className="px-3 py-2.5 text-right">
                           <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(crypto.marketCap)}</span>
                         </td>
                       </tr>

@@ -29,3 +29,8 @@
 - [x] Implement server-side scheduled daily data refresh (every 30 min)
 - [x] Ensure mcap cache auto-refreshes daily (every 2 hours)
 - [x] Send daily report notification automatically (21:00 UTC / 05:00 UTC+8)
+- [x] Switch token prices from Yahoo Finance to CoinMarketCap API
+- [x] Add CoinMarketCap API key as secret
+- [x] Add Google Sheets-style column filter dropdowns (A-Z, Z-A sorting)
+- [x] Build Crypto Treasury NAV page (25 companies, 26 asset rows, 11 columns)
+- [x] NAV data configured from spreadsheet CSV export with live CMC prices

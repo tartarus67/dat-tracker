@@ -1,10 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
-import { DAT_COMPANIES, CRYPTO_ASSETS, ALL_STOCK_TICKERS, ALL_CRYPTO_YAHOO_SYMBOLS } from "@shared/datConfig";
+import { DAT_COMPANIES, CRYPTO_ASSETS, ALL_STOCK_TICKERS, ALL_CRYPTO_SYMBOLS } from "@shared/datConfig";
+import { NAV_COMPANIES } from "@shared/navConfig";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { fetchAllStockData, fetchAllCryptoData } from "./datData";
+import { fetchAllStockData } from "./datData";
 import { getMcapData } from "./mcapData";
+import { getCmcPrices } from "./cmcData";
 import { buildReportData, generateReportTitle, generateReportContent } from "./reportGenerator";
 import { notifyOwner } from "./_core/notification";
 
@@ -42,51 +44,38 @@ export const appRouter = router({
       const cached = getCached<DashboardResult>("dashboardData");
       if (cached) return cached;
 
-      const [stockDataMap, cryptoDataMap, mcapData] = await Promise.all([
+      const [stockDataMap, cmcData, mcapData] = await Promise.all([
         fetchAllStockData(ALL_STOCK_TICKERS),
-        fetchAllCryptoData(ALL_CRYPTO_YAHOO_SYMBOLS),
+        getCmcPrices(ALL_CRYPTO_SYMBOLS),
         getMcapData(),
       ]);
 
-      // Build crypto lookup: asset symbol -> crypto data
-      const cryptoBySymbol = new Map<string, {
-        price: number;
-        change7d: number;
-        change30d: number;
-      }>();
-
+      // Build crypto response from CMC data
       const cryptoResponse = CRYPTO_ASSETS.map(asset => {
-        const data = cryptoDataMap.get(asset.yahooSymbol);
-        const entry = {
+        const cmc = cmcData.get(asset.symbol);
+        return {
           symbol: asset.symbol,
-          name: asset.name,
-          yahooSymbol: asset.yahooSymbol,
-          price: data?.quote.price || 0,
-          change1d: data?.quote.change1d || 0,
-          change7d: data?.change7d || 0,
-          change30d: data?.change30d || 0,
-          volume: data?.quote.volume || 0,
-          marketCap: data?.quote.marketCap || 0,
-          error: !data,
+          name: cmc?.name || asset.name,
+          price: cmc?.price || 0,
+          change1d: cmc?.change24h || 0,
+          change7d: cmc?.change7d || 0,
+          change30d: cmc?.change30d || 0,
+          volume: cmc?.volume24h || 0,
+          marketCap: cmc?.marketCap || 0,
+          error: !cmc,
         };
-        cryptoBySymbol.set(asset.symbol, {
-          price: entry.price,
-          change7d: entry.change7d,
-          change30d: entry.change30d,
-        });
-        return entry;
       });
 
       // Build stock response with all parameters
       const stockResponse = DAT_COMPANIES.map(company => {
         const data = stockDataMap.get(company.ticker);
         const mcap = mcapData[company.ticker];
-        const cryptoData = cryptoBySymbol.get(company.datAsset);
+        const cmcToken = cmcData.get(company.datAsset);
 
-        // Token price data
-        const tokenPrice = cryptoData?.price || 0;
-        const tokenPrice7d = cryptoData?.change7d || 0;
-        const tokenPrice30d = cryptoData?.change30d || 0;
+        // Token price from CMC
+        const tokenPrice = cmcToken?.price || 0;
+        const tokenPrice7d = cmcToken?.change7d || 0;
+        const tokenPrice30d = cmcToken?.change30d || 0;
 
         // NAV = holdings × token price (in $M)
         const navRaw = company.holdings > 0 && tokenPrice > 0
@@ -107,26 +96,10 @@ export const appRouter = router({
             category: company.category,
             datAsset: company.datAsset,
             holdings: company.holdings,
-            // Stock price
-            price: 0,
-            change1d: 0,
-            change7d: 0,
-            change30d: 0,
-            // Token price
-            tokenPrice,
-            tokenPrice7d,
-            tokenPrice30d,
-            // Valuation
-            mcap: mcapValue,
-            nav,
-            mNAV,
-            // Volume
-            vol24h: 0,
-            vol1dPct: 0,
-            vol7dAvg: 0,
-            vol7dPct: 0,
-            vol30dAvg: 0,
-            vol30dPct: 0,
+            price: 0, change1d: 0, change7d: 0, change30d: 0,
+            tokenPrice, tokenPrice7d, tokenPrice30d,
+            mcap: mcapValue, nav, mNAV,
+            vol24h: 0, vol1dPct: 0, vol7dAvg: 0, vol7dPct: 0, vol30dAvg: 0, vol30dPct: 0,
             error: true,
           };
         }
@@ -137,20 +110,12 @@ export const appRouter = router({
           category: company.category,
           datAsset: company.datAsset,
           holdings: company.holdings,
-          // Stock price
           price: data.quote.price,
           change1d: data.quote.change1d,
           change7d: data.change7d,
           change30d: data.change30d,
-          // Token price
-          tokenPrice,
-          tokenPrice7d,
-          tokenPrice30d,
-          // Valuation
-          mcap: mcapValue,
-          nav,
-          mNAV,
-          // Volume
+          tokenPrice, tokenPrice7d, tokenPrice30d,
+          mcap: mcapValue, nav, mNAV,
           vol24h: data.volumeStats.vol24h,
           vol1dPct: data.volumeStats.vol1dPct,
           vol7dAvg: data.volumeStats.vol7dAvg,
@@ -176,6 +141,42 @@ export const appRouter = router({
       const title = generateReportTitle(reportData);
       const content = generateReportContent(reportData);
       return { title, content, data: reportData };
+    }),
+
+    /** Crypto Treasury NAV data */
+    getNavData: publicProcedure.query(async () => {
+      const cached = getCached<NavResult>("navData");
+      if (cached) return cached;
+
+      // Get all unique symbols needed
+      const symbols = Array.from(new Set(NAV_COMPANIES.map(c => c.assetSymbol)));
+      const cmcData = await getCmcPrices(symbols);
+
+      const rows = NAV_COMPANIES.map(company => {
+        const cmc = cmcData.get(company.assetSymbol);
+        const assetPrice = cmc?.price || 0;
+        const holdingsValue = company.holdings * assetPrice;
+        const totalAssets = holdingsValue + company.otherAssets;
+        const nav = totalAssets - company.liabilities;
+
+        return {
+          company: company.company,
+          ticker: company.ticker,
+          primaryAsset: company.primaryAsset,
+          assetSymbol: company.assetSymbol,
+          holdings: company.holdings,
+          assetPrice,
+          holdingsValue,
+          otherAssets: company.otherAssets,
+          totalAssets,
+          liabilities: company.liabilities,
+          nav,
+        };
+      });
+
+      const result: NavResult = { rows, lastUpdated: Date.now() };
+      setCache("navData", result);
+      return result;
     }),
 
     /** Generate report and send via Manus notification */
@@ -224,7 +225,6 @@ type DashboardResult = {
   crypto: Array<{
     symbol: string;
     name: string;
-    yahooSymbol: string;
     price: number;
     change1d: number;
     change7d: number;
@@ -232,6 +232,23 @@ type DashboardResult = {
     volume: number;
     marketCap: number;
     error: boolean;
+  }>;
+  lastUpdated: number;
+};
+
+type NavResult = {
+  rows: Array<{
+    company: string;
+    ticker: string;
+    primaryAsset: string;
+    assetSymbol: string;
+    holdings: number;
+    assetPrice: number;
+    holdingsValue: number;
+    otherAssets: number;
+    totalAssets: number;
+    liabilities: number;
+    nav: number;
   }>;
   lastUpdated: number;
 };
