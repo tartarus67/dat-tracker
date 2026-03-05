@@ -4,36 +4,55 @@
  */
 import { DAT_COMPANIES, CRYPTO_ASSETS, ALL_STOCK_TICKERS, ALL_CRYPTO_YAHOO_SYMBOLS } from "@shared/datConfig";
 import { fetchAllStockData, fetchAllCryptoData } from "./datData";
+import { getMcapData } from "./mcapData";
+
+export type ReportStock = {
+  ticker: string;
+  company: string;
+  category: string;
+  datAsset: string;
+  holdings: number;
+  price: number;
+  change1d: number;
+  change7d: number;
+  change30d: number;
+  tokenPrice: number;
+  tokenPrice7d: number;
+  tokenPrice30d: number;
+  mcap: number;
+  nav: number;
+  mNAV: number;
+  vol24h: number;
+  vol1dPct: number;
+  vol7dAvg: number;
+  vol7dPct: number;
+  vol30dAvg: number;
+  vol30dPct: number;
+  error: boolean;
+};
+
+export type ReportCrypto = {
+  symbol: string;
+  name: string;
+  price: number;
+  change1d: number;
+  change7d: number;
+  change30d: number;
+  volume: number;
+  error: boolean;
+};
 
 export type ReportData = {
   generatedAt: string;
-  stocks: Array<{
-    ticker: string;
-    company: string;
-    category: string;
-    datAsset: string;
-    price: number;
-    change1d: number;
-    change7d: number;
-    change30d: number;
-    volume: number;
-    error: boolean;
-  }>;
-  crypto: Array<{
-    symbol: string;
-    name: string;
-    price: number;
-    change1d: number;
-    change7d: number;
-    change30d: number;
-    volume: number;
-    error: boolean;
-  }>;
+  stocks: ReportStock[];
+  crypto: ReportCrypto[];
   summary: {
     totalCompanies: number;
     majorsCount: number;
     altsCount: number;
     avgChange1d: number;
+    totalMcap: number;
+    totalNav: number;
     topGainer: { ticker: string; change1d: number } | null;
     topLoser: { ticker: string; change1d: number } | null;
     gainersCount: number;
@@ -42,34 +61,18 @@ export type ReportData = {
   };
 };
 
-/**
- * Fetch all data and build report data structure
- */
 export async function buildReportData(): Promise<ReportData> {
-  const [stockDataMap, cryptoDataMap] = await Promise.all([
+  const [stockDataMap, cryptoDataMap, mcapData] = await Promise.all([
     fetchAllStockData(ALL_STOCK_TICKERS),
     fetchAllCryptoData(ALL_CRYPTO_YAHOO_SYMBOLS),
+    getMcapData(),
   ]);
 
-  const stocks = DAT_COMPANIES.map(company => {
-    const data = stockDataMap.get(company.ticker);
-    return {
-      ticker: company.ticker,
-      company: company.company,
-      category: company.category,
-      datAsset: company.datAsset,
-      price: data?.quote.price ?? 0,
-      change1d: data?.quote.change1d ?? 0,
-      change7d: data?.change7d ?? 0,
-      change30d: data?.change30d ?? 0,
-      volume: data?.quote.volume ?? 0,
-      error: !data,
-    };
-  });
-
-  const crypto = CRYPTO_ASSETS.map(asset => {
+  // Build crypto lookup
+  const cryptoBySymbol = new Map<string, { price: number; change7d: number; change30d: number }>();
+  const crypto: ReportCrypto[] = CRYPTO_ASSETS.map(asset => {
     const data = cryptoDataMap.get(asset.yahooSymbol);
-    return {
+    const entry = {
       symbol: asset.symbol,
       name: asset.name,
       price: data?.quote.price ?? 0,
@@ -79,21 +82,60 @@ export async function buildReportData(): Promise<ReportData> {
       volume: data?.quote.volume ?? 0,
       error: !data,
     };
+    cryptoBySymbol.set(asset.symbol, { price: entry.price, change7d: entry.change7d, change30d: entry.change30d });
+    return entry;
+  });
+
+  const stocks: ReportStock[] = DAT_COMPANIES.map(company => {
+    const data = stockDataMap.get(company.ticker);
+    const mcap = mcapData[company.ticker];
+    const cd = cryptoBySymbol.get(company.datAsset);
+
+    const tokenPrice = cd?.price || 0;
+    const tokenPrice7d = cd?.change7d || 0;
+    const tokenPrice30d = cd?.change30d || 0;
+    const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+    const nav = navRaw / 1e6;
+    const mcapValue = (mcap?.marketCap || 0) / 1e6;
+    const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
+
+    return {
+      ticker: company.ticker,
+      company: company.company,
+      category: company.category,
+      datAsset: company.datAsset,
+      holdings: company.holdings,
+      price: data?.quote.price ?? 0,
+      change1d: data?.quote.change1d ?? 0,
+      change7d: data?.change7d ?? 0,
+      change30d: data?.change30d ?? 0,
+      tokenPrice,
+      tokenPrice7d,
+      tokenPrice30d,
+      mcap: mcapValue,
+      nav,
+      mNAV,
+      vol24h: data?.volumeStats.vol24h ?? 0,
+      vol1dPct: data?.volumeStats.vol1dPct ?? 0,
+      vol7dAvg: data?.volumeStats.vol7dAvg ?? 0,
+      vol7dPct: data?.volumeStats.vol7dPct ?? 0,
+      vol30dAvg: data?.volumeStats.vol30dAvg ?? 0,
+      vol30dPct: data?.volumeStats.vol30dPct ?? 0,
+      error: !data,
+    };
   });
 
   const validStocks = stocks.filter(s => !s.error);
-  const avgChange1d = validStocks.length > 0
-    ? validStocks.reduce((sum, s) => sum + s.change1d, 0) / validStocks.length
-    : 0;
+  const avgChange1d = validStocks.length > 0 ? validStocks.reduce((sum, s) => sum + s.change1d, 0) / validStocks.length : 0;
+  const totalMcap = stocks.reduce((sum, s) => sum + s.mcap, 0);
+  const totalNav = stocks.reduce((sum, s) => sum + s.nav, 0);
 
   const sorted = [...validStocks].sort((a, b) => b.change1d - a.change1d);
   const topGainer = sorted.length > 0 ? { ticker: sorted[0].ticker, change1d: sorted[0].change1d } : null;
   const topLoser = sorted.length > 0 ? { ticker: sorted[sorted.length - 1].ticker, change1d: sorted[sorted.length - 1].change1d } : null;
 
   const validCrypto = crypto.filter(c => !c.error);
-  const cryptoAvgChange1d = validCrypto.length > 0
-    ? validCrypto.reduce((sum, c) => sum + c.change1d, 0) / validCrypto.length
-    : 0;
+  const cryptoAvgChange1d = validCrypto.length > 0 ? validCrypto.reduce((sum, c) => sum + c.change1d, 0) / validCrypto.length : 0;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -104,6 +146,8 @@ export async function buildReportData(): Promise<ReportData> {
       majorsCount: stocks.filter(s => s.category === "Majors").length,
       altsCount: stocks.filter(s => s.category === "Alts").length,
       avgChange1d,
+      totalMcap,
+      totalNav,
       topGainer,
       topLoser,
       gainersCount: validStocks.filter(s => s.change1d > 0).length,
@@ -133,53 +177,43 @@ function fmtVol(vol: number): string {
   return vol.toLocaleString();
 }
 
-/**
- * Generate the notification title
- */
+function fmtMcap(val: number): string {
+  if (val === 0) return "N/A";
+  if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
+  return `$${val.toFixed(0)}M`;
+}
+
 export function generateReportTitle(data: ReportData): string {
   const date = new Date(data.generatedAt).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+    weekday: "short", month: "short", day: "numeric", year: "numeric",
   });
-  const arrow = data.summary.avgChange1d >= 0 ? "↑" : "↓";
+  const arrow = data.summary.avgChange1d >= 0 ? "\u2191" : "\u2193";
   return `DAT Daily Report ${date} | Avg ${arrow}${Math.abs(data.summary.avgChange1d).toFixed(2)}%`;
 }
 
-/**
- * Generate formatted text report for notification
- */
 export function generateReportContent(data: ReportData): string {
   const lines: string[] = [];
   const date = new Date(data.generatedAt).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
   });
   const time = new Date(data.generatedAt).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZoneName: "short",
+    hour: "2-digit", minute: "2-digit", timeZoneName: "short",
   });
 
-  lines.push(`📊 DAT DAILY SUMMARY REPORT`);
+  lines.push(`DAT DAILY SUMMARY REPORT`);
   lines.push(`${date} at ${time}`);
-  lines.push(`${"─".repeat(50)}`);
+  lines.push(`${"=".repeat(60)}`);
   lines.push(``);
 
   // Summary
-  lines.push(`📈 MARKET OVERVIEW`);
-  lines.push(`Companies Tracked: ${data.summary.totalCompanies} (${data.summary.majorsCount} Majors, ${data.summary.altsCount} Alts)`);
+  lines.push(`MARKET OVERVIEW`);
+  lines.push(`Companies: ${data.summary.totalCompanies} (${data.summary.majorsCount} Majors, ${data.summary.altsCount} Alts)`);
   lines.push(`Avg 1D Change: ${fmtPct(data.summary.avgChange1d)}`);
   lines.push(`Gainers/Losers: ${data.summary.gainersCount} / ${data.summary.losersCount}`);
-  if (data.summary.topGainer) {
-    lines.push(`Top Gainer: ${data.summary.topGainer.ticker} (${fmtPct(data.summary.topGainer.change1d)})`);
-  }
-  if (data.summary.topLoser) {
-    lines.push(`Top Loser: ${data.summary.topLoser.ticker} (${fmtPct(data.summary.topLoser.change1d)})`);
-  }
+  lines.push(`Total MCAP: ${fmtMcap(data.summary.totalMcap)}`);
+  lines.push(`Total NAV: ${fmtMcap(data.summary.totalNav)}`);
+  if (data.summary.topGainer) lines.push(`Top Gainer: ${data.summary.topGainer.ticker} (${fmtPct(data.summary.topGainer.change1d)})`);
+  if (data.summary.topLoser) lines.push(`Top Loser: ${data.summary.topLoser.ticker} (${fmtPct(data.summary.topLoser.change1d)})`);
   lines.push(`Crypto Avg 1D: ${fmtPct(data.summary.cryptoAvgChange1d)}`);
   lines.push(``);
 
@@ -187,67 +221,71 @@ export function generateReportContent(data: ReportData): string {
   const validStocks = data.stocks.filter(s => !s.error);
   const sortedByChange = [...validStocks].sort((a, b) => b.change1d - a.change1d);
 
-  lines.push(`🔥 TOP 5 GAINERS`);
+  lines.push(`TOP 5 GAINERS`);
   sortedByChange.slice(0, 5).forEach((s, i) => {
-    lines.push(`${i + 1}. ${s.ticker} (${s.company}) ${fmtPrice(s.price)} ${fmtPct(s.change1d)}`);
+    lines.push(`${i + 1}. ${s.ticker} ${fmtPrice(s.price)} ${fmtPct(s.change1d)} | MCAP ${fmtMcap(s.mcap)} | mNAV ${s.mNAV > 0 ? s.mNAV.toFixed(2) + "x" : "N/A"}`);
   });
   lines.push(``);
 
-  lines.push(`❄️ TOP 5 LOSERS`);
+  lines.push(`TOP 5 LOSERS`);
   sortedByChange.slice(-5).reverse().forEach((s, i) => {
-    lines.push(`${i + 1}. ${s.ticker} (${s.company}) ${fmtPrice(s.price)} ${fmtPct(s.change1d)}`);
+    lines.push(`${i + 1}. ${s.ticker} ${fmtPrice(s.price)} ${fmtPct(s.change1d)} | MCAP ${fmtMcap(s.mcap)} | mNAV ${s.mNAV > 0 ? s.mNAV.toFixed(2) + "x" : "N/A"}`);
   });
   lines.push(``);
 
   // Majors Table
-  lines.push(`${"─".repeat(50)}`);
-  lines.push(`📋 MAJORS (${data.summary.majorsCount} companies)`);
+  lines.push(`${"=".repeat(60)}`);
+  lines.push(`MAJORS (${data.summary.majorsCount} companies)`);
   lines.push(``);
+  lines.push(`${"Ticker".padEnd(7)} ${"Price".padStart(9)} ${"1D%".padStart(8)} ${"7D%".padStart(8)} ${"30D%".padStart(8)} ${"MCAP".padStart(8)} ${"NAV".padStart(8)} ${"mNAV".padStart(6)} ${"Vol".padStart(7)}`);
+  lines.push(`${"-".repeat(76)}`);
 
   const majors = data.stocks.filter(s => s.category === "Majors").sort((a, b) => b.change1d - a.change1d);
-  lines.push(`${"Ticker".padEnd(8)} ${"Price".padStart(10)} ${"1D%".padStart(9)} ${"7D%".padStart(9)} ${"30D%".padStart(9)} ${"Vol".padStart(8)}`);
-  lines.push(`${"─".repeat(58)}`);
   majors.forEach(s => {
+    const mcapStr = s.mcap > 0 ? fmtMcap(s.mcap) : "N/A";
+    const navStr = s.nav > 0 ? fmtMcap(s.nav) : "N/A";
+    const mnavStr = s.mNAV > 0 ? `${s.mNAV.toFixed(1)}x` : "N/A";
     if (s.error) {
-      lines.push(`${s.ticker.padEnd(8)} ${"N/A".padStart(10)} ${"N/A".padStart(9)} ${"N/A".padStart(9)} ${"N/A".padStart(9)} ${"N/A".padStart(8)}`);
+      lines.push(`${s.ticker.padEnd(7)} ${"N/A".padStart(9)} ${"N/A".padStart(8)} ${"N/A".padStart(8)} ${"N/A".padStart(8)} ${mcapStr.padStart(8)} ${navStr.padStart(8)} ${mnavStr.padStart(6)} ${"N/A".padStart(7)}`);
     } else {
-      lines.push(`${s.ticker.padEnd(8)} ${fmtPrice(s.price).padStart(10)} ${fmtPct(s.change1d).padStart(9)} ${fmtPct(s.change7d).padStart(9)} ${fmtPct(s.change30d).padStart(9)} ${fmtVol(s.volume).padStart(8)}`);
+      lines.push(`${s.ticker.padEnd(7)} ${fmtPrice(s.price).padStart(9)} ${fmtPct(s.change1d).padStart(8)} ${fmtPct(s.change7d).padStart(8)} ${fmtPct(s.change30d).padStart(8)} ${mcapStr.padStart(8)} ${navStr.padStart(8)} ${mnavStr.padStart(6)} ${fmtVol(s.vol24h).padStart(7)}`);
     }
   });
   lines.push(``);
 
   // Alts Table
-  lines.push(`📋 ALTS (${data.summary.altsCount} companies)`);
+  lines.push(`ALTS (${data.summary.altsCount} companies)`);
   lines.push(``);
+  lines.push(`${"Ticker".padEnd(7)} ${"Asset".padEnd(5)} ${"Price".padStart(9)} ${"1D%".padStart(8)} ${"7D%".padStart(8)} ${"30D%".padStart(8)} ${"MCAP".padStart(8)} ${"Vol".padStart(7)}`);
+  lines.push(`${"-".repeat(68)}`);
 
   const alts = data.stocks.filter(s => s.category === "Alts").sort((a, b) => b.change1d - a.change1d);
-  lines.push(`${"Ticker".padEnd(8)} ${"Asset".padEnd(6)} ${"Price".padStart(10)} ${"1D%".padStart(9)} ${"7D%".padStart(9)} ${"30D%".padStart(9)} ${"Vol".padStart(8)}`);
-  lines.push(`${"─".repeat(64)}`);
   alts.forEach(s => {
+    const mcapStr = s.mcap > 0 ? fmtMcap(s.mcap) : "N/A";
     if (s.error) {
-      lines.push(`${s.ticker.padEnd(8)} ${s.datAsset.padEnd(6)} ${"N/A".padStart(10)} ${"N/A".padStart(9)} ${"N/A".padStart(9)} ${"N/A".padStart(9)} ${"N/A".padStart(8)}`);
+      lines.push(`${s.ticker.padEnd(7)} ${s.datAsset.padEnd(5)} ${"N/A".padStart(9)} ${"N/A".padStart(8)} ${"N/A".padStart(8)} ${"N/A".padStart(8)} ${mcapStr.padStart(8)} ${"N/A".padStart(7)}`);
     } else {
-      lines.push(`${s.ticker.padEnd(8)} ${s.datAsset.padEnd(6)} ${fmtPrice(s.price).padStart(10)} ${fmtPct(s.change1d).padStart(9)} ${fmtPct(s.change7d).padStart(9)} ${fmtPct(s.change30d).padStart(9)} ${fmtVol(s.volume).padStart(8)}`);
+      lines.push(`${s.ticker.padEnd(7)} ${s.datAsset.padEnd(5)} ${fmtPrice(s.price).padStart(9)} ${fmtPct(s.change1d).padStart(8)} ${fmtPct(s.change7d).padStart(8)} ${fmtPct(s.change30d).padStart(8)} ${mcapStr.padStart(8)} ${fmtVol(s.vol24h).padStart(7)}`);
     }
   });
   lines.push(``);
 
   // Crypto Table
-  lines.push(`${"─".repeat(50)}`);
-  lines.push(`🪙 UNDERLYING CRYPTO ASSETS`);
+  lines.push(`${"=".repeat(60)}`);
+  lines.push(`UNDERLYING CRYPTO ASSETS`);
   lines.push(``);
-  lines.push(`${"Symbol".padEnd(8)} ${"Name".padEnd(14)} ${"Price".padStart(12)} ${"1D%".padStart(9)} ${"7D%".padStart(9)} ${"30D%".padStart(9)}`);
-  lines.push(`${"─".repeat(64)}`);
+  lines.push(`${"Symbol".padEnd(7)} ${"Name".padEnd(12)} ${"Price".padStart(12)} ${"1D%".padStart(8)} ${"7D%".padStart(8)} ${"30D%".padStart(8)}`);
+  lines.push(`${"-".repeat(58)}`);
   const sortedCrypto = [...data.crypto].sort((a, b) => b.change1d - a.change1d);
   sortedCrypto.forEach(c => {
     if (c.error) {
-      lines.push(`${c.symbol.padEnd(8)} ${c.name.padEnd(14)} ${"N/A".padStart(12)} ${"N/A".padStart(9)} ${"N/A".padStart(9)} ${"N/A".padStart(9)}`);
+      lines.push(`${c.symbol.padEnd(7)} ${c.name.padEnd(12)} ${"N/A".padStart(12)} ${"N/A".padStart(8)} ${"N/A".padStart(8)} ${"N/A".padStart(8)}`);
     } else {
-      lines.push(`${c.symbol.padEnd(8)} ${c.name.padEnd(14)} ${fmtPrice(c.price).padStart(12)} ${fmtPct(c.change1d).padStart(9)} ${fmtPct(c.change7d).padStart(9)} ${fmtPct(c.change30d).padStart(9)}`);
+      lines.push(`${c.symbol.padEnd(7)} ${c.name.padEnd(12)} ${fmtPrice(c.price).padStart(12)} ${fmtPct(c.change1d).padStart(8)} ${fmtPct(c.change7d).padStart(8)} ${fmtPct(c.change30d).padStart(8)}`);
     }
   });
   lines.push(``);
-  lines.push(`${"─".repeat(50)}`);
+  lines.push(`${"=".repeat(60)}`);
   lines.push(`Generated by DAT Tracker | Auto-refreshes every 5 min`);
 
   return lines.join("\n");

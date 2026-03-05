@@ -17,3 +17,12 @@
 - [x] Add tRPC endpoint to trigger report manually
 - [x] Send first test report via Manus built-in notification
 - [ ] Add report page to view reports in the dashboard
+- [x] Update dashboard columns to match spreadsheet exactly (19 columns)
+- [x] Add Token Price, Token Price 7d%, Token Price 30d% columns
+- [x] Add NAV ($M) calculation (holdings x token price)
+- [x] Add MCAP ($M) from yfinance data
+- [x] Add mNAV calculation (MCAP/NAV)
+- [x] Add Vol 1d%, Vol 7d Avg, Vol 7d%, Vol 30d Avg, Vol 30d% columns
+- [x] Update report generator with new parameters (MCAP, NAV, mNAV)
+- [x] Update vitest tests for new parameters (12/12 passing)
+- [x] Add Send Report button to dashboard header

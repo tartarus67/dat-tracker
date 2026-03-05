@@ -1,6 +1,5 @@
 /**
  * DAT data fetching module — uses Yahoo Finance v8 API directly via axios.
- * The built-in Data API proxy has strict rate limits, so we call Yahoo directly.
  */
 import axios from "axios";
 
@@ -34,6 +33,15 @@ export type HistoricalPoint = {
   volume: number;
 };
 
+export type VolumeStats = {
+  vol24h: number;
+  vol1dPct: number;  // volume change vs previous day
+  vol7dAvg: number;
+  vol7dPct: number;  // current vol vs 7d avg
+  vol30dAvg: number;
+  vol30dPct: number; // current vol vs 30d avg
+};
+
 const YAHOO_BASE = "https://query1.finance.yahoo.com/v8/finance/chart";
 
 const YAHOO_HEADERS = {
@@ -41,9 +49,6 @@ const YAHOO_HEADERS = {
   Accept: "application/json",
 };
 
-/**
- * Fetch Yahoo Finance chart data directly
- */
 async function fetchYahooChart(symbol: string, range = "1mo", interval = "1d") {
   try {
     const resp = await axios.get(`${YAHOO_BASE}/${encodeURIComponent(symbol)}`, {
@@ -69,6 +74,30 @@ function calcPctChange(currentPrice: number, historicalPrices: number[], daysBac
   return ((currentPrice - oldPrice) / oldPrice) * 100;
 }
 
+function calcVolumeStats(volumes: (number | null)[], currentVolume: number): VolumeStats {
+  const validVolumes = volumes.filter((v): v is number => v !== null && v !== undefined && v > 0);
+
+  if (validVolumes.length === 0) {
+    return { vol24h: currentVolume, vol1dPct: 0, vol7dAvg: 0, vol7dPct: 0, vol30dAvg: 0, vol30dPct: 0 };
+  }
+
+  // Previous day volume (second to last)
+  const prevDayVol = validVolumes.length >= 2 ? validVolumes[validVolumes.length - 2] : 0;
+  const vol1dPct = prevDayVol > 0 ? ((currentVolume - prevDayVol) / prevDayVol) * 100 : 0;
+
+  // 7-day average volume
+  const last7 = validVolumes.slice(-7);
+  const vol7dAvg = last7.length > 0 ? last7.reduce((a, b) => a + b, 0) / last7.length : 0;
+  const vol7dPct = vol7dAvg > 0 ? ((currentVolume - vol7dAvg) / vol7dAvg) * 100 : 0;
+
+  // 30-day average volume
+  const last30 = validVolumes.slice(-30);
+  const vol30dAvg = last30.length > 0 ? last30.reduce((a, b) => a + b, 0) / last30.length : 0;
+  const vol30dPct = vol30dAvg > 0 ? ((currentVolume - vol30dAvg) / vol30dAvg) * 100 : 0;
+
+  return { vol24h: currentVolume, vol1dPct, vol7dAvg, vol7dPct, vol30dAvg, vol30dPct };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractData(data: any) {
   const r = data.chart.result[0];
@@ -86,6 +115,9 @@ function extractData(data: any) {
   const change7d = calcPctChange(currentPrice, validCloses, 7);
   const change30d = calcPctChange(currentPrice, validCloses, 30);
 
+  const currentVolume = meta.regularMarketVolume || 0;
+  const volumeStats = calcVolumeStats(volumes, currentVolume);
+
   const history: HistoricalPoint[] = [];
   for (let i = 0; i < timestamps.length; i++) {
     if (closes[i] !== null && closes[i] !== undefined) {
@@ -97,19 +129,20 @@ function extractData(data: any) {
     }
   }
 
-  return { meta, currentPrice, previousClose, change1d, change7d, change30d, history };
+  return { meta, currentPrice, previousClose, change1d, change7d, change30d, volumeStats, history };
 }
 
 export async function fetchStockData(ticker: string): Promise<{
   quote: StockQuote;
   change7d: number;
   change30d: number;
+  volumeStats: VolumeStats;
   history: HistoricalPoint[];
 } | null> {
   const data = await fetchYahooChart(ticker);
   if (!data) return null;
 
-  const { meta, currentPrice, previousClose, change1d, change7d, change30d, history } = extractData(data);
+  const { meta, currentPrice, previousClose, change1d, change7d, change30d, volumeStats, history } = extractData(data);
 
   return {
     quote: {
@@ -127,6 +160,7 @@ export async function fetchStockData(ticker: string): Promise<{
     },
     change7d,
     change30d,
+    volumeStats,
     history,
   };
 }
@@ -141,7 +175,6 @@ export async function fetchCryptoData(yahooSymbol: string): Promise<{
   if (!data) return null;
 
   const { meta, currentPrice, change1d, change7d, change30d, history } = extractData(data);
-
   const displaySymbol = yahooSymbol.replace(/-USD$/, "").replace(/\d+$/, "");
 
   return {
@@ -160,9 +193,7 @@ export async function fetchCryptoData(yahooSymbol: string): Promise<{
   };
 }
 
-/**
- * Fetch all stock data in batches of 3 with delay
- */
+/** Fetch all stock data in batches of 3 with delay */
 export async function fetchAllStockData(tickers: string[]): Promise<Map<string, Awaited<ReturnType<typeof fetchStockData>>>> {
   const results = new Map<string, Awaited<ReturnType<typeof fetchStockData>>>();
   const batchSize = 3;
@@ -175,9 +206,7 @@ export async function fetchAllStockData(tickers: string[]): Promise<Map<string, 
   return results;
 }
 
-/**
- * Fetch all crypto data in batches
- */
+/** Fetch all crypto data in batches */
 export async function fetchAllCryptoData(yahooSymbols: string[]): Promise<Map<string, Awaited<ReturnType<typeof fetchCryptoData>>>> {
   const results = new Map<string, Awaited<ReturnType<typeof fetchCryptoData>>>();
   const batchSize = 3;
