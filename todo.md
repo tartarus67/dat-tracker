@@ -26,3 +26,6 @@
 - [x] Update report generator with new parameters (MCAP, NAV, mNAV)
 - [x] Update vitest tests for new parameters (12/12 passing)
 - [x] Add Send Report button to dashboard header
+- [x] Implement server-side scheduled daily data refresh (every 30 min)
+- [x] Ensure mcap cache auto-refreshes daily (every 2 hours)
+- [x] Send daily report notification automatically (21:00 UTC / 05:00 UTC+8)
