@@ -18,11 +18,17 @@ import {
   ArrowDownAZ,
   ArrowUp01,
   ArrowDown01,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { CRYPTO_ASSETS } from "@shared/datConfig";
 
-type SortField = "company" | "ticker" | "price" | "change1d" | "change7d" | "change30d" | "vol24h" | "datAsset" | "mcap" | "nav" | "mNAV" | "tokenPrice" | "tokenPrice7d" | "tokenPrice30d" | "vol1dPct" | "vol7dAvg" | "vol7dPct" | "vol30dAvg" | "vol30dPct";
+// Build lookup maps for links
+const CRYPTO_CMC_SLUG_MAP: Record<string, string> = {};
+CRYPTO_ASSETS.forEach(a => { CRYPTO_CMC_SLUG_MAP[a.symbol] = a.cmcSlug; });
+
+type SortField = "category" | "company" | "ticker" | "price" | "change1d" | "change7d" | "change30d" | "vol24h" | "datAsset" | "mcap" | "nav" | "mNAV" | "tokenPrice" | "tokenPrice7d" | "tokenPrice30d" | "vol1dPct" | "vol7dAvg" | "vol7dPct" | "vol30dAvg" | "vol30dPct";
 type SortDir = "asc" | "desc";
 type CategoryFilter = "all" | "Majors" | "Alts";
 
@@ -199,7 +205,7 @@ export default function Dashboard() {
     items.sort((a, b) => {
       const dir = stockSort.dir === "asc" ? 1 : -1;
       const field = stockSort.field;
-      if (field === "company" || field === "ticker" || field === "datAsset") {
+      if (field === "company" || field === "ticker" || field === "datAsset" || field === "category") {
         return dir * ((a as Record<string, unknown>)[field] as string).localeCompare((b as Record<string, unknown>)[field] as string);
       }
       const aVal = (a as Record<string, unknown>)[field] as number;
@@ -261,7 +267,7 @@ export default function Dashboard() {
               className="h-8 px-3 rounded-md border border-border flex items-center gap-1.5 text-xs hover:bg-accent transition-colors disabled:opacity-50"
             >
               <Send className="h-3 w-3" />
-              {sendReport.isPending ? "Sending..." : "Report"}
+              {sendReport.isPending ? "Sending..." : "Send Report"}
             </button>
             <button
               onClick={() => refetch()}
@@ -356,7 +362,9 @@ export default function Dashboard() {
                     </tr>
                     {/* Column headers with filter dropdowns */}
                     <tr className="border-b border-border bg-muted/30">
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-10">Cat</th>
+                      <th className="px-2 py-2 text-left">
+                        <ColumnFilter field="category" label="Cat" currentSort={stockSort} onSort={handleStockSort} isText align="left" />
+                      </th>
                       <th className="px-2 py-2 text-left">
                         <ColumnFilter field="ticker" label="Ticker" currentSort={stockSort} onSort={handleStockSort} isText align="left" />
                       </th>
@@ -414,58 +422,81 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredStocks.map((stock, idx) => (
-                      <tr
-                        key={stock.ticker}
-                        className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
-                      >
-                        <td className="px-2 py-2">
-                          <Badge variant={stock.category === "Majors" ? "default" : "secondary"} className="text-[9px] px-1 py-0">
-                            {stock.category}
-                          </Badge>
-                        </td>
-                        <td className="px-2 py-2">
-                          <span className="font-mono font-semibold text-primary text-xs">{stock.ticker}</span>
-                        </td>
-                        <td className="px-2 py-2">
-                          <span className="font-mono text-[10px] text-warning">{stock.datAsset}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs">{formatPrice(stock.price)}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.change1d} /></td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.change7d} /></td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.change30d} /></td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs text-warning">{formatPrice(stock.tokenPrice)}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.tokenPrice7d} /></td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.tokenPrice30d} /></td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs">{stock.mcap > 0 ? formatMcap(stock.mcap) : "\u2014"}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs">{stock.nav > 0 ? formatMcap(stock.nav) : "\u2014"}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right">
-                          <span className={`font-mono tabular-nums text-xs ${stock.mNAV > 1 ? "text-positive" : stock.mNAV > 0 ? "text-negative" : "text-muted-foreground"}`}>
-                            {stock.mNAV > 0 ? `${stock.mNAV.toFixed(2)}x` : "\u2014"}
-                          </span>
-                        </td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol24h)}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.vol1dPct} /></td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol7dAvg)}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.vol7dPct} /></td>
-                        <td className="px-2 py-2 text-right">
-                          <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol30dAvg)}</span>
-                        </td>
-                        <td className="px-2 py-2 text-right"><PctCell value={stock.vol30dPct} /></td>
-                      </tr>
-                    ))}
+                    {filteredStocks.map((stock, idx) => {
+                      const cmcSlug = CRYPTO_CMC_SLUG_MAP[stock.datAsset];
+                      return (
+                        <tr
+                          key={stock.ticker}
+                          className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
+                        >
+                          <td className="px-2 py-2">
+                            <Badge variant={stock.category === "Majors" ? "default" : "secondary"} className="text-[9px] px-1 py-0">
+                              {stock.category}
+                            </Badge>
+                          </td>
+                          <td className="px-2 py-2">
+                            <a
+                              href={`https://finance.yahoo.com/quote/${stock.ticker}/`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono font-semibold text-primary text-xs hover:underline inline-flex items-center gap-0.5"
+                            >
+                              {stock.ticker}
+                              <ExternalLink className="h-2.5 w-2.5 opacity-40" />
+                            </a>
+                          </td>
+                          <td className="px-2 py-2">
+                            {cmcSlug ? (
+                              <a
+                                href={`https://coinmarketcap.com/currencies/${cmcSlug}/`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono text-[10px] text-warning hover:underline inline-flex items-center gap-0.5"
+                              >
+                                {stock.datAsset}
+                                <ExternalLink className="h-2.5 w-2.5 opacity-40" />
+                              </a>
+                            ) : (
+                              <span className="font-mono text-[10px] text-warning">{stock.datAsset}</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs">{formatPrice(stock.price)}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.change1d} /></td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.change7d} /></td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.change30d} /></td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs text-warning">{formatPrice(stock.tokenPrice)}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.tokenPrice7d} /></td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.tokenPrice30d} /></td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs">{stock.mcap > 0 ? formatMcap(stock.mcap) : "\u2014"}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs">{stock.nav > 0 ? formatMcap(stock.nav) : "\u2014"}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right">
+                            <span className={`font-mono tabular-nums text-xs ${stock.mNAV > 1 ? "text-positive" : stock.mNAV > 0 ? "text-negative" : "text-muted-foreground"}`}>
+                              {stock.mNAV > 0 ? `${stock.mNAV.toFixed(2)}x` : "\u2014"}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol24h)}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.vol1dPct} /></td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol7dAvg)}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.vol7dPct} /></td>
+                          <td className="px-2 py-2 text-right">
+                            <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(stock.vol30dAvg)}</span>
+                          </td>
+                          <td className="px-2 py-2 text-right"><PctCell value={stock.vol30dPct} /></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -506,31 +537,46 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedCrypto.map((crypto, idx) => (
-                      <tr
-                        key={crypto.symbol}
-                        className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
-                      >
-                        <td className="px-3 py-2.5">
-                          <span className="font-mono font-semibold text-warning text-xs">{crypto.symbol}</span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <span className="text-foreground text-xs">{crypto.name}</span>
-                        </td>
-                        <td className="px-3 py-2.5 text-right">
-                          <span className="font-mono tabular-nums text-xs">{formatPrice(crypto.price)}</span>
-                        </td>
-                        <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change1d} /></td>
-                        <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change7d} /></td>
-                        <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change30d} /></td>
-                        <td className="px-3 py-2.5 text-right">
-                          <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(crypto.volume)}</span>
-                        </td>
-                        <td className="px-3 py-2.5 text-right">
-                          <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(crypto.marketCap)}</span>
-                        </td>
-                      </tr>
-                    ))}
+                    {sortedCrypto.map((crypto, idx) => {
+                      const cmcSlug = CRYPTO_CMC_SLUG_MAP[crypto.symbol];
+                      return (
+                        <tr
+                          key={crypto.symbol}
+                          className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
+                        >
+                          <td className="px-3 py-2.5">
+                            {cmcSlug ? (
+                              <a
+                                href={`https://coinmarketcap.com/currencies/${cmcSlug}/`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-mono font-semibold text-warning text-xs hover:underline inline-flex items-center gap-0.5"
+                              >
+                                {crypto.symbol}
+                                <ExternalLink className="h-2.5 w-2.5 opacity-40" />
+                              </a>
+                            ) : (
+                              <span className="font-mono font-semibold text-warning text-xs">{crypto.symbol}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="text-foreground text-xs">{crypto.name}</span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right">
+                            <span className="font-mono tabular-nums text-xs">{formatPrice(crypto.price)}</span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change1d} /></td>
+                          <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change7d} /></td>
+                          <td className="px-3 py-2.5 text-right"><PctCell value={crypto.change30d} /></td>
+                          <td className="px-3 py-2.5 text-right">
+                            <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(crypto.volume)}</span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right">
+                            <span className="font-mono tabular-nums text-xs text-muted-foreground">{formatVol(crypto.marketCap)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

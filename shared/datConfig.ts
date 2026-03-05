@@ -14,6 +14,7 @@ export type CryptoAsset = {
   symbol: string;
   name: string;
   yahooSymbol: string;
+  cmcSlug: string;
 };
 
 /**
@@ -55,20 +56,20 @@ export const DAT_COMPANIES: DATCompany[] = [
 ];
 
 export const CRYPTO_ASSETS: CryptoAsset[] = [
-  { symbol: "BTC", name: "Bitcoin", yahooSymbol: "BTC-USD" },
-  { symbol: "ETH", name: "Ethereum", yahooSymbol: "ETH-USD" },
-  { symbol: "SOL", name: "Solana", yahooSymbol: "SOL-USD" },
-  { symbol: "TAO", name: "Bittensor", yahooSymbol: "TAO22974-USD" },
-  { symbol: "WLD", name: "Worldcoin", yahooSymbol: "WLD-USD" },
-  { symbol: "IP", name: "Story Protocol", yahooSymbol: "IP-USD" },
-  { symbol: "ATH", name: "Aethir", yahooSymbol: "ATH-USD" },
-  { symbol: "BNB", name: "BNB", yahooSymbol: "BNB-USD" },
-  { symbol: "SUI", name: "Sui", yahooSymbol: "SUI20947-USD" },
-  { symbol: "XRP", name: "XRP", yahooSymbol: "XRP-USD" },
-  { symbol: "TRX", name: "Tron", yahooSymbol: "TRX-USD" },
-  { symbol: "DOGE", name: "Dogecoin", yahooSymbol: "DOGE-USD" },
-  { symbol: "0G", name: "0G", yahooSymbol: "0G-USD" },
-  { symbol: "TON", name: "Toncoin", yahooSymbol: "TON11419-USD" },
+  { symbol: "BTC", name: "Bitcoin", yahooSymbol: "BTC-USD", cmcSlug: "bitcoin" },
+  { symbol: "ETH", name: "Ethereum", yahooSymbol: "ETH-USD", cmcSlug: "ethereum" },
+  { symbol: "SOL", name: "Solana", yahooSymbol: "SOL-USD", cmcSlug: "solana" },
+  { symbol: "TAO", name: "Bittensor", yahooSymbol: "TAO22974-USD", cmcSlug: "bittensor" },
+  { symbol: "WLD", name: "Worldcoin", yahooSymbol: "WLD-USD", cmcSlug: "worldcoin-org" },
+  { symbol: "IP", name: "Story Protocol", yahooSymbol: "IP-USD", cmcSlug: "story" },
+  { symbol: "ATH", name: "Aethir", yahooSymbol: "ATH-USD", cmcSlug: "aethir" },
+  { symbol: "BNB", name: "BNB", yahooSymbol: "BNB-USD", cmcSlug: "bnb" },
+  { symbol: "SUI", name: "Sui", yahooSymbol: "SUI20947-USD", cmcSlug: "sui" },
+  { symbol: "XRP", name: "XRP", yahooSymbol: "XRP-USD", cmcSlug: "xrp" },
+  { symbol: "TRX", name: "Tron", yahooSymbol: "TRX-USD", cmcSlug: "tron" },
+  { symbol: "DOGE", name: "Dogecoin", yahooSymbol: "DOGE-USD", cmcSlug: "dogecoin" },
+  { symbol: "0G", name: "0G", yahooSymbol: "0G-USD", cmcSlug: "0g" },
+  { symbol: "TON", name: "Toncoin", yahooSymbol: "TON11419-USD", cmcSlug: "toncoin" },
 ];
 
 /** Unique set of stock tickers */

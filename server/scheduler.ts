@@ -8,7 +8,7 @@
  */
 import cron from "node-cron";
 import { fetchAllStockData, fetchAllCryptoData } from "./datData";
-import { getMcapData } from "./mcapData";
+import { getMcapData, refreshMcapCache } from "./mcapData";
 import { buildReportData, generateReportTitle, generateReportContent } from "./reportGenerator";
 import { notifyOwner } from "./_core/notification";
 import { ALL_STOCK_TICKERS, ALL_CRYPTO_YAHOO_SYMBOLS } from "@shared/datConfig";
@@ -41,11 +41,12 @@ async function refreshAllData(): Promise<void> {
 }
 
 /**
- * Refresh MCAP data (triggers the Python script via mcapData module)
+ * Refresh MCAP data (uses yahoo-finance2 npm package)
  */
 async function refreshMcapData(): Promise<void> {
   console.log("[Scheduler] Refreshing MCAP data...");
   try {
+    await refreshMcapCache();
     const mcap = await getMcapData();
     console.log(`[Scheduler] MCAP refresh complete — ${Object.keys(mcap).length} tickers`);
   } catch (err) {
@@ -97,10 +98,19 @@ export function initScheduler(): void {
     sendDailyReport().catch(console.error);
   });
 
-  // 4. Initial data load on startup (with 10s delay to let server stabilize)
-  setTimeout(() => {
-    refreshAllData().catch(console.error);
-  }, 10_000);
+  // 4. Initial data load on startup (with 5s delay to let server stabilize)
+  //    Load MCAP first (takes ~30s), then stock/crypto data
+  setTimeout(async () => {
+    try {
+      console.log("[Scheduler] Pre-warming MCAP data...");
+      await refreshMcapData();
+      console.log("[Scheduler] Pre-warming stock + crypto data...");
+      await refreshAllData();
+      console.log("[Scheduler] Initial data load complete");
+    } catch (err) {
+      console.error("[Scheduler] Initial data load failed:", (err as Error).message);
+    }
+  }, 5_000);
 
   console.log("[Scheduler] Scheduled tasks:");
   console.log("  - Data refresh: every 30 min");

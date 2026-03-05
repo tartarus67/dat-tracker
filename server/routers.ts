@@ -131,7 +131,11 @@ export const appRouter = router({
         crypto: cryptoResponse,
         lastUpdated: Date.now(),
       };
-      setCache("dashboardData", result);
+      // Only cache if MCAP data is loaded (avoid caching incomplete data on first load)
+      const hasMcap = stockResponse.some(s => s.mcap > 0);
+      if (hasMcap) {
+        setCache("dashboardData", result);
+      }
       return result;
     }),
 

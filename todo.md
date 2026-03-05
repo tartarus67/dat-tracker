@@ -34,3 +34,8 @@
 - [x] Add Google Sheets-style column filter dropdowns (A-Z, Z-A sorting)
 - [x] Build Crypto Treasury NAV page (25 companies, 26 asset rows, 11 columns)
 - [x] NAV data configured from spreadsheet CSV export with live CMC prices
+- [x] Fix MCAP data not showing in published dashboard (replaced Python with yahoo-finance2 npm + cache race fix)
+- [x] Fix mNAV calculation to use MCAP/NAV (already correct, fixed caching)
+- [x] Add ticker links to Yahoo Finance pages
+- [x] Add asset links to CoinMarketCap pages
+- [x] Add A-Z/Z-A sorting to Category column

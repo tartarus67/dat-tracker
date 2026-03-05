@@ -2,8 +2,6 @@ import { trpc } from "@/lib/trpc";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowUpRight,
-  ArrowDownRight,
   RefreshCw,
   BarChart3,
   ChevronDown,
@@ -11,8 +9,14 @@ import {
   ArrowDownAZ,
   ArrowUp01,
   ArrowDown01,
+  ExternalLink,
 } from "lucide-react";
 import { Link } from "wouter";
+import { CRYPTO_ASSETS } from "@shared/datConfig";
+
+// Build lookup map for CMC slugs
+const CRYPTO_CMC_SLUG_MAP: Record<string, string> = {};
+CRYPTO_ASSETS.forEach(a => { CRYPTO_CMC_SLUG_MAP[a.symbol] = a.cmcSlug; });
 
 type SortField = "company" | "ticker" | "primaryAsset" | "assetSymbol" | "holdings" | "assetPrice" | "holdingsValue" | "otherAssets" | "totalAssets" | "liabilities" | "nav";
 type SortDir = "asc" | "desc";
@@ -40,19 +44,21 @@ function formatHoldings(val: number): string {
   return val.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-/** Column filter dropdown — Google Sheets style */
+/** Column filter dropdown */
 function ColumnFilter({
   field,
   label,
   currentSort,
   onSort,
   isText,
+  align = "left",
 }: {
   field: SortField;
   label: string;
   currentSort: { field: SortField; dir: SortDir };
   onSort: (field: SortField, dir: SortDir) => void;
   isText?: boolean;
+  align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -67,7 +73,7 @@ function ColumnFilter({
   }, []);
 
   return (
-    <div ref={ref} className="relative inline-flex">
+    <div ref={ref} className={`relative inline-flex ${align === "right" ? "justify-end" : ""}`}>
       <button
         onClick={() => setOpen(!open)}
         className={`flex items-center gap-0.5 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap transition-colors ${
@@ -78,7 +84,7 @@ function ColumnFilter({
         <ChevronDown className={`h-2.5 w-2.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[140px]">
+        <div className={`absolute top-full mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[140px] ${align === "right" ? "right-0" : "left-0"}`}>
           <button
             onClick={() => { onSort(field, "asc"); setOpen(false); }}
             className={`w-full px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-accent transition-colors ${
@@ -86,7 +92,7 @@ function ColumnFilter({
             }`}
           >
             {isText ? <ArrowUpAZ className="h-3.5 w-3.5" /> : <ArrowUp01 className="h-3.5 w-3.5" />}
-            Sort A{isText ? "\u2013Z" : " \u2192 9"}
+            Sort {isText ? "A\u2013Z" : "Low \u2192 High"}
           </button>
           <button
             onClick={() => { onSort(field, "desc"); setOpen(false); }}
@@ -95,7 +101,7 @@ function ColumnFilter({
             }`}
           >
             {isText ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowDown01 className="h-3.5 w-3.5" />}
-            Sort Z{isText ? "\u2013A" : " \u2192 1"}
+            Sort {isText ? "Z\u2013A" : "High \u2192 Low"}
           </button>
         </div>
       )}
@@ -223,69 +229,92 @@ export default function NavPage() {
                     <ColumnFilter field="assetSymbol" label="Asset Symbol" currentSort={sort} onSort={handleSort} isText />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="holdings" label="Holdings (Units)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="holdings" label="Holdings (Units)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="assetPrice" label="Asset Price (USD)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="assetPrice" label="Asset Price (USD)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="holdingsValue" label="Holdings Value (USD)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="holdingsValue" label="Holdings Value (USD)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="otherAssets" label="Other Assets (USD)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="otherAssets" label="Other Assets (USD)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="totalAssets" label="Total Assets (USD)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="totalAssets" label="Total Assets (USD)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="liabilities" label="Liabilities (USD)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="liabilities" label="Liabilities (USD)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                   <th className="px-3 py-2.5 text-right">
-                    <ColumnFilter field="nav" label="NAV (USD)" currentSort={sort} onSort={handleSort} />
+                    <ColumnFilter field="nav" label="NAV (USD)" currentSort={sort} onSort={handleSort} align="right" />
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {sortedRows.map((row, idx) => (
-                  <tr
-                    key={`${row.ticker}-${row.assetSymbol}-${idx}`}
-                    className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
-                  >
-                    <td className="px-3 py-2.5">
-                      <span className="text-foreground text-xs">{row.company}</span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="font-mono font-semibold text-primary text-xs">{row.ticker}</span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="text-muted-foreground text-xs">{row.primaryAsset}</span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="font-mono font-semibold text-warning text-xs">{row.assetSymbol}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs">{formatHoldings(row.holdings)}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs">{formatPrice(row.assetPrice)}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs font-semibold">{formatUsd(row.holdingsValue)}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs text-muted-foreground">{row.otherAssets > 0 ? formatUsd(row.otherAssets) : "\u2014"}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs">{formatUsd(row.totalAssets)}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs text-muted-foreground">{row.liabilities > 0 ? formatUsd(row.liabilities) : "\u2014"}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="font-mono tabular-nums text-xs font-semibold text-positive">{formatUsd(row.nav)}</span>
-                    </td>
-                  </tr>
-                ))}
+                {sortedRows.map((row, idx) => {
+                  const cmcSlug = CRYPTO_CMC_SLUG_MAP[row.assetSymbol];
+                  return (
+                    <tr
+                      key={`${row.ticker}-${row.assetSymbol}-${idx}`}
+                      className={`border-b border-border/50 hover:bg-accent/30 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/10"}`}
+                    >
+                      <td className="px-3 py-2.5">
+                        <span className="text-foreground text-xs">{row.company}</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <a
+                          href={`https://finance.yahoo.com/quote/${row.ticker}/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono font-semibold text-primary text-xs hover:underline inline-flex items-center gap-0.5"
+                        >
+                          {row.ticker}
+                          <ExternalLink className="h-2.5 w-2.5 opacity-40" />
+                        </a>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="text-muted-foreground text-xs">{row.primaryAsset}</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {cmcSlug ? (
+                          <a
+                            href={`https://coinmarketcap.com/currencies/${cmcSlug}/`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-xs text-warning hover:underline inline-flex items-center gap-0.5"
+                          >
+                            {row.assetSymbol}
+                            <ExternalLink className="h-2.5 w-2.5 opacity-40" />
+                          </a>
+                        ) : (
+                          <span className="font-mono text-xs text-warning">{row.assetSymbol}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs">{formatHoldings(row.holdings)}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs">{formatPrice(row.assetPrice)}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs font-semibold">{formatUsd(row.holdingsValue)}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs text-muted-foreground">{row.otherAssets > 0 ? formatUsd(row.otherAssets) : "\u2014"}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs">{formatUsd(row.totalAssets)}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs text-muted-foreground">{row.liabilities > 0 ? formatUsd(row.liabilities) : "\u2014"}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="font-mono tabular-nums text-xs font-semibold text-positive">{formatUsd(row.nav)}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-border bg-muted/20">
