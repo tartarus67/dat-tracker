@@ -65,10 +65,15 @@ export function formatTelegramReport(reportData: {
     category: string;
     price: number;
     change1d: number;
+    change7d: number;
+    change30d: number;
     mcap: number;
     nav: number;
     mNAV: number;
     vol24h: number;
+    vol1dPct: number;
+    vol7dPct: number;
+    vol30dPct: number;
   }>;
   crypto: Array<{
     symbol: string;
@@ -99,6 +104,9 @@ export function formatTelegramReport(reportData: {
 
   let msg = `<b>📊 DAT Daily Report</b>\n`;
   msg += `<i>${date} | 10:00 AM SGT</i>\n\n`;
+
+  // ─── TLDR Section ───
+  msg += buildTldr(stocks);
 
   msg += `${arrow} <b>Avg 1D Change:</b> ${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%\n`;
   msg += `📊 <b>Total MCAP:</b> $${fmtB(totalMcap)}\n`;
@@ -140,6 +148,85 @@ export function formatTelegramReport(reportData: {
   msg += `\n<i>🔗 Full dashboard: datdash-htsxo2qg.manus.space</i>`;
 
   return msg;
+}
+
+/**
+ * Build TLDR section: AGPU vs cohort, Majors avg, Alts avg
+ * for price % change and volume % change across 1D/7D/30D
+ */
+function buildTldr(stocks: Array<{
+  ticker: string; category: string;
+  change1d: number; change7d: number; change30d: number;
+  vol1dPct: number; vol7dPct: number; vol30dPct: number;
+}>): string {
+  const p = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+
+  const valid = stocks.filter(s => s.change1d !== 0 || s.change7d !== 0);
+  const majors = valid.filter(s => s.category === "Majors");
+  const alts = valid.filter(s => s.category === "Alts");
+  const agpu = stocks.find(s => s.ticker === "AGPU");
+
+  const avg = (arr: typeof stocks, fn: (s: typeof stocks[0]) => number) =>
+    arr.length > 0 ? arr.reduce((s, x) => s + fn(x), 0) / arr.length : 0;
+
+  // Cohort averages (all stocks)
+  const cohortPrice1d = avg(valid, s => s.change1d);
+  const cohortPrice7d = avg(valid, s => s.change7d);
+  const cohortPrice30d = avg(valid, s => s.change30d);
+  const cohortVol1d = avg(valid, s => s.vol1dPct);
+  const cohortVol7d = avg(valid, s => s.vol7dPct);
+  const cohortVol30d = avg(valid, s => s.vol30dPct);
+
+  // Rank helper (1 = best)
+  const rank = (arr: number[], val: number) => {
+    const sorted = [...arr].sort((a, b) => b - a);
+    return sorted.indexOf(val) + 1 || sorted.length;
+  };
+
+  let tldr = `<b>⚡ TLDR</b>\n\n`;
+
+  // AGPU vs cohort
+  if (agpu) {
+    const priceRank1d = rank(valid.map(s => s.change1d), agpu.change1d);
+    const priceRank7d = rank(valid.map(s => s.change7d), agpu.change7d);
+    const priceRank30d = rank(valid.map(s => s.change30d), agpu.change30d);
+    tldr += `<b>AGPU vs Cohort (Price)</b>\n`;
+    tldr += `• 1D: ${p(agpu.change1d)} vs avg ${p(cohortPrice1d)} (#${priceRank1d}/${valid.length})\n`;
+    tldr += `• 7D: ${p(agpu.change7d)} vs avg ${p(cohortPrice7d)} (#${priceRank7d}/${valid.length})\n`;
+    tldr += `• 30D: ${p(agpu.change30d)} vs avg ${p(cohortPrice30d)} (#${priceRank30d}/${valid.length})\n\n`;
+
+    const volRank1d = rank(valid.map(s => s.vol1dPct), agpu.vol1dPct);
+    const volRank7d = rank(valid.map(s => s.vol7dPct), agpu.vol7dPct);
+    const volRank30d = rank(valid.map(s => s.vol30dPct), agpu.vol30dPct);
+    tldr += `<b>AGPU vs Cohort (Volume)</b>\n`;
+    tldr += `• 1D: ${p(agpu.vol1dPct)} vs avg ${p(cohortVol1d)} (#${volRank1d}/${valid.length})\n`;
+    tldr += `• 7D: ${p(agpu.vol7dPct)} vs avg ${p(cohortVol7d)} (#${volRank7d}/${valid.length})\n`;
+    tldr += `• 30D: ${p(agpu.vol30dPct)} vs avg ${p(cohortVol30d)} (#${volRank30d}/${valid.length})\n\n`;
+  }
+
+  // Majors category
+  const majPrice1d = avg(majors, s => s.change1d);
+  const majPrice7d = avg(majors, s => s.change7d);
+  const majPrice30d = avg(majors, s => s.change30d);
+  const majVol1d = avg(majors, s => s.vol1dPct);
+  const majVol7d = avg(majors, s => s.vol7dPct);
+  const majVol30d = avg(majors, s => s.vol30dPct);
+  tldr += `<b>Majors (${majors.length})</b>\n`;
+  tldr += `• Price: 1D ${p(majPrice1d)} | 7D ${p(majPrice7d)} | 30D ${p(majPrice30d)}\n`;
+  tldr += `• Volume: 1D ${p(majVol1d)} | 7D ${p(majVol7d)} | 30D ${p(majVol30d)}\n\n`;
+
+  // Alts category
+  const altPrice1d = avg(alts, s => s.change1d);
+  const altPrice7d = avg(alts, s => s.change7d);
+  const altPrice30d = avg(alts, s => s.change30d);
+  const altVol1d = avg(alts, s => s.vol1dPct);
+  const altVol7d = avg(alts, s => s.vol7dPct);
+  const altVol30d = avg(alts, s => s.vol30dPct);
+  tldr += `<b>Alts (${alts.length})</b>\n`;
+  tldr += `• Price: 1D ${p(altPrice1d)} | 7D ${p(altPrice7d)} | 30D ${p(altPrice30d)}\n`;
+  tldr += `• Volume: 1D ${p(altVol1d)} | 7D ${p(altVol7d)} | 30D ${p(altVol30d)}\n\n`;
+
+  return tldr;
 }
 
 function fmtB(val: number): string {

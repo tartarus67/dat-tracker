@@ -52,3 +52,4 @@
 - [x] Integrate snapshot saving into scheduler (daily at 21:30 UTC / 05:30 SGT)
 - [x] Seed holdings from config on startup if DB empty
 - [x] Update scheduler tests (21/21 passing)
+- [x] Add TLDR section to Telegram report: AGPU vs cohort (price & volume), Majors avg, Alts avg
