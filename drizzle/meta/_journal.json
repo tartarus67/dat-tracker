@@ -8,6 +8,20 @@
       "when": 1771733175922,
       "tag": "0000_illegal_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1772687539246,
+      "tag": "0001_unknown_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772687758501,
+      "tag": "0002_fair_echo",
+      "breakpoints": true
     }
   ]
 }

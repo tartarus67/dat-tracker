@@ -256,6 +256,12 @@ export default function Dashboard() {
             <Link href="/nav" className="h-8 px-3 rounded-md border border-border flex items-center gap-1.5 text-xs hover:bg-accent transition-colors">
               Crypto Treasury NAV
             </Link>
+            <Link href="/snapshots" className="h-8 px-3 rounded-md border border-border flex items-center gap-1.5 text-xs hover:bg-accent transition-colors">
+              Snapshots
+            </Link>
+            <Link href="/admin/holdings" className="h-8 px-3 rounded-md border border-border flex items-center gap-1.5 text-xs hover:bg-accent transition-colors">
+              Admin
+            </Link>
             {data?.lastUpdated && (
               <span className="text-xs text-muted-foreground font-mono">
                 Updated {new Date(data.lastUpdated).toLocaleTimeString()}

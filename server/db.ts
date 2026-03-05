@@ -1,11 +1,15 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser, users,
+  stockSnapshots, InsertStockSnapshot,
+  cryptoSnapshots, InsertCryptoSnapshot,
+  companyHoldings, InsertCompanyHolding, CompanyHolding,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -85,8 +89,130 @@ export async function getUserByOpenId(openId: string) {
   }
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ─── Snapshots ───────────────────────────────────────────────
+
+/**
+ * Save a batch of stock snapshots for a given date.
+ * Uses INSERT IGNORE to skip duplicates if already saved for that date.
+ */
+export async function saveStockSnapshots(rows: InsertStockSnapshot[]): Promise<number> {
+  const db = await getDb();
+  if (!db || rows.length === 0) return 0;
+
+  // Delete existing rows for this date first (idempotent re-save)
+  const dateStr = rows[0].snapshotDate;
+  await db.delete(stockSnapshots).where(eq(stockSnapshots.snapshotDate, dateStr));
+  await db.insert(stockSnapshots).values(rows);
+  return rows.length;
+}
+
+/**
+ * Save a batch of crypto snapshots for a given date.
+ */
+export async function saveCryptoSnapshots(rows: InsertCryptoSnapshot[]): Promise<number> {
+  const db = await getDb();
+  if (!db || rows.length === 0) return 0;
+
+  const dateStr = rows[0].snapshotDate;
+  await db.delete(cryptoSnapshots).where(eq(cryptoSnapshots.snapshotDate, dateStr));
+  await db.insert(cryptoSnapshots).values(rows);
+  return rows.length;
+}
+
+/**
+ * Get stock snapshots for a specific date
+ */
+export async function getStockSnapshotsByDate(dateStr: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(stockSnapshots).where(eq(stockSnapshots.snapshotDate, dateStr));
+}
+
+/**
+ * Get crypto snapshots for a specific date
+ */
+export async function getCryptoSnapshotsByDate(dateStr: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(cryptoSnapshots).where(eq(cryptoSnapshots.snapshotDate, dateStr));
+}
+
+/**
+ * Get all distinct snapshot dates (most recent first)
+ */
+export async function getSnapshotDates(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ snapshotDate: stockSnapshots.snapshotDate })
+    .from(stockSnapshots)
+    .groupBy(stockSnapshots.snapshotDate)
+    .orderBy(desc(stockSnapshots.snapshotDate))
+    .limit(90);
+  return rows.map(r => r.snapshotDate);
+}
+
+// ─── Holdings ────────────────────────────────────────────────
+
+/**
+ * Get all company holdings
+ */
+export async function getAllHoldings(): Promise<CompanyHolding[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(companyHoldings);
+}
+
+/**
+ * Upsert a company holding (insert or update on duplicate ticker)
+ */
+export async function upsertHolding(data: InsertCompanyHolding): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(companyHoldings).values(data).onDuplicateKeyUpdate({
+    set: {
+      company: data.company,
+      category: data.category,
+      datAsset: data.datAsset,
+      holdings: data.holdings,
+      otherAssets: data.otherAssets,
+      liabilities: data.liabilities,
+      updatedBy: data.updatedBy,
+    },
+  });
+}
+
+/**
+ * Seed holdings from the hardcoded config (only if table is empty)
+ */
+export async function seedHoldingsIfEmpty(companies: Array<{
+  ticker: string;
+  company: string;
+  category: string;
+  datAsset: string;
+  holdings: number;
+}>): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const existing = await db.select({ id: companyHoldings.id }).from(companyHoldings).limit(1);
+  if (existing.length > 0) return 0; // already seeded
+
+  const rows: InsertCompanyHolding[] = companies.map(c => ({
+    ticker: c.ticker,
+    company: c.company,
+    category: c.category,
+    datAsset: c.datAsset,
+    holdings: c.holdings,
+    otherAssets: 0,
+    liabilities: 0,
+    updatedBy: "system-seed",
+  }));
+
+  await db.insert(companyHoldings).values(rows);
+  return rows.length;
+}

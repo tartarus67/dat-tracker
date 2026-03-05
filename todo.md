@@ -1,7 +1,7 @@
 # DAT Tracker Dashboard - TODO
 
 - [x] Design dark theme (Bloomberg Terminal aesthetic) with custom CSS variables
-- [ ] Create database schema for DAT companies, crypto assets, and daily snapshots
+- [x] Create database schema for DAT companies, crypto assets, and daily snapshots
 - [x] Build server-side API routes to fetch stock data from Yahoo Finance
 - [x] Build server-side API routes to fetch crypto data from Yahoo Finance
 - [x] Create main dashboard page with DAT company table (price, volume, 1d/7d/30d %)
@@ -10,7 +10,7 @@
 - [x] Add sorting functionality to tables
 - [x] Build daily summary report generation endpoint
 - [ ] Implement email notification system (victor.x@aethir.com) [pending API key]
-- [ ] Implement Telegram notification system (@nvxin) [pending bot token]
+- [x] Implement Telegram notification system (@nvxin)
 - [x] Add auto-refresh mechanism for live data (5-min interval)
 - [x] Write vitest tests for API routes
 - [x] Build report generation logic (daily summary format)
@@ -39,3 +39,16 @@
 - [x] Add ticker links to Yahoo Finance pages
 - [x] Add asset links to CoinMarketCap pages
 - [x] Add A-Z/Z-A sorting to Category column
+- [x] Set up Telegram bot with token (DAT_DAILY_BOT)
+- [x] Get Telegram chat ID for @nvxin (1507917898)
+- [x] Send daily report via Telegram at 10am SGT (02:00 UTC)
+- [x] Create database schema for daily snapshots (stocks + crypto)
+- [x] Build backend endpoint to save daily snapshots
+- [x] Build backend endpoint to retrieve historical snapshots
+- [x] Build frontend page/section for historical snapshots with date picker
+- [x] Create database schema for company holdings (admin-editable)
+- [x] Build admin page to edit company holdings
+- [x] Connect holdings editor to NAV calculations
+- [x] Integrate snapshot saving into scheduler (daily at 21:30 UTC / 05:30 SGT)
+- [x] Seed holdings from config on startup if DB empty
+- [x] Update scheduler tests (21/21 passing)
