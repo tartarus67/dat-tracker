@@ -57,3 +57,7 @@
 - [x] Build trend chart view on Snapshots page (line graph, dates on x-axis)
 - [x] Add metric selector: price, DAT price, token price, volume, NAV, 1D%, 7D%, 30D% (price & volume)
 - [x] Highlight AGPU line in neon green (#39FF14), dim other lines in non-green colors
+- [x] Clickable lines: click to select, show hover info with token name, reading, rank vs cohort
+- [x] Hover info updates as cursor moves across dates, click empty space to deselect
+- [x] Add Top 5, Top 10, Bottom 5, Bottom 10 quick filters
+- [x] Add date range filter with calendar start/end date picker
