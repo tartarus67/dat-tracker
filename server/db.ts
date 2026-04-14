@@ -155,6 +155,18 @@ export async function getSnapshotDates(): Promise<string[]> {
   return rows.map(r => r.snapshotDate);
 }
 
+/**
+ * Get ALL stock snapshots across all dates (for trend charts)
+ * Returns rows ordered by date ASC, ticker ASC
+ */
+export async function getAllStockSnapshots() {
+  const db = await getDb();
+  if (!db) return [];
+  const { asc } = await import("drizzle-orm");
+  return db.select().from(stockSnapshots)
+    .orderBy(asc(stockSnapshots.snapshotDate), asc(stockSnapshots.ticker));
+}
+
 // ─── Holdings ────────────────────────────────────────────────
 
 /**

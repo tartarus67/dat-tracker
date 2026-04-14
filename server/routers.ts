@@ -13,7 +13,8 @@ import { sendTelegramMessage, formatTelegramReport } from "./telegram";
 import {
   saveStockSnapshots, saveCryptoSnapshots,
   getStockSnapshotsByDate, getCryptoSnapshotsByDate,
-  getSnapshotDates, getAllHoldings, upsertHolding, seedHoldingsIfEmpty,
+  getSnapshotDates, getAllStockSnapshots,
+  getAllHoldings, upsertHolding, seedHoldingsIfEmpty,
 } from "./db";
 import { z } from "zod";
 
@@ -269,8 +270,12 @@ export const appRouter = router({
         return { date: input.date, stocks, crypto };
       }),
 
-    // ─── Holdings (Admin) ────────────────────────────────────
+    /** Get all stock snapshots for trend charts (all dates, all tickers) */
+    getTrendData: publicProcedure.query(async () => {
+      return getAllStockSnapshots();
+    }),
 
+    // ─── Holdings (Admin) ────────────────────────────────────────
     /** Get all company holdings */
     getHoldings: publicProcedure.query(async () => {
       return getAllHoldings();

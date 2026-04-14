@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import NavPage from "./pages/NavPage";
 import SnapshotsPage from "./pages/SnapshotsPage";
 import AdminHoldings from "./pages/AdminHoldings";
+import TrendChart from "./pages/TrendChart";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path={"/nav"} component={NavPage} />
       <Route path={"/snapshots"} component={SnapshotsPage} />
       <Route path={"/admin/holdings"} component={AdminHoldings} />
+      <Route path={"/trends"} component={TrendChart} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Calendar, Download, Camera, ChevronDown } from "lucide-react";
+import { ArrowLeft, Calendar, Download, Camera, ChevronDown, TrendingUp } from "lucide-react";
 
 function fmt(n: number, decimals = 2): string {
   if (n === 0) return "—";
@@ -76,6 +76,13 @@ export default function SnapshotsPage() {
               <span className="text-amber-400 px-2 py-1 border-b border-amber-400">Snapshots</span>
               <Link href="/admin/holdings" className="text-zinc-400 hover:text-zinc-200 px-2 py-1">Admin</Link>
             </nav>
+            <Link
+              href="/trends"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-xs font-medium hover:bg-emerald-500/30 transition-colors"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Trends
+            </Link>
             <button
               onClick={handleSaveSnapshot}
               disabled={saveSnapshot.isPending}

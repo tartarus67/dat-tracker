@@ -200,10 +200,10 @@ export function initScheduler(): void {
     sendDailyReport().catch(console.error);
   });
 
-  // 5. Daily report via Telegram at 02:00 UTC (10:00 AM SGT)
-  cron.schedule("0 0 2 * * *", () => {
-    sendTelegramReport().catch(console.error);
-  });
+  // 5. Daily report via Telegram — DISABLED per user request
+  // cron.schedule("0 0 2 * * *", () => {
+  //   sendTelegramReport().catch(console.error);
+  // });
 
   // 6. Initial data load on startup (with 5s delay to let server stabilize)
   setTimeout(async () => {
@@ -232,7 +232,7 @@ export function initScheduler(): void {
   console.log("  - MCAP refresh: every 2 hours");
   console.log("  - Daily snapshot: 21:30 UTC (05:30 SGT)");
   console.log("  - Daily report (Manus): 21:00 UTC (05:00 SGT)");
-  console.log("  - Daily report (Telegram): 02:00 UTC (10:00 SGT)");
+  console.log("  - Daily report (Telegram): DISABLED");
 }
 
 export function getLastDataRefresh(): number {

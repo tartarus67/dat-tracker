@@ -53,3 +53,7 @@
 - [x] Seed holdings from config on startup if DB empty
 - [x] Update scheduler tests (21/21 passing)
 - [x] Add TLDR section to Telegram report: AGPU vs cohort (price & volume), Majors avg, Alts avg
+- [x] Disable Telegram scheduled daily report
+- [x] Build trend chart view on Snapshots page (line graph, dates on x-axis)
+- [x] Add metric selector: price, DAT price, token price, volume, NAV, 1D%, 7D%, 30D% (price & volume)
+- [x] Highlight AGPU line in neon green (#39FF14), dim other lines in non-green colors

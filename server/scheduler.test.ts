@@ -72,10 +72,10 @@ describe("scheduler", () => {
     vi.useRealTimers();
   });
 
-  it("registers five cron schedules on init", () => {
+  it("registers four cron schedules on init (Telegram disabled)", () => {
     initScheduler();
-    // 5 cron.schedule calls: data refresh, mcap refresh, daily snapshot, manus report, telegram report
-    expect(cron.schedule).toHaveBeenCalledTimes(5);
+    // 4 cron.schedule calls: data refresh, mcap refresh, daily snapshot, manus report
+    expect(cron.schedule).toHaveBeenCalledTimes(4);
   });
 
   it("schedules data refresh every 30 minutes", () => {
@@ -102,10 +102,12 @@ describe("scheduler", () => {
     expect(calls[3][0]).toBe("0 0 21 * * *");
   });
 
-  it("schedules daily Telegram report at 02:00 UTC (10:00 SGT)", () => {
+  it("Telegram report is disabled", () => {
     initScheduler();
     const calls = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls;
-    expect(calls[4][0]).toBe("0 0 2 * * *");
+    // Telegram cron should NOT be registered
+    const cronExpressions = calls.map((c: unknown[]) => c[0]);
+    expect(cronExpressions).not.toContain("0 0 2 * * *");
   });
 
   it("getLastDataRefresh returns 0 before any refresh", () => {
