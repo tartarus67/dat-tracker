@@ -4,9 +4,13 @@
  * Schedules:
  * - Data cache refresh: every 30 minutes
  * - MCAP cache refresh: every 2 hours
- * - Daily snapshot: 21:30 UTC (05:30 AM SGT) — after US market close
+ * - Daily snapshot: 00:00 UTC (08:00 AM SGT)
  * - Daily report (Manus): 21:00 UTC (05:00 AM SGT)
- * - Daily report (Telegram): 02:00 UTC (10:00 AM SGT)
+ * 
+ * IMPORTANT: The sandbox hibernates when inactive, causing node-cron to miss
+ * scheduled executions. To guarantee daily snapshots, we use a catch-up mechanism
+ * that checks on every startup and every data refresh whether today's snapshot
+ * is missing, and takes one if needed.
  */
 import cron from "node-cron";
 import { fetchAllStockData } from "./datData";
@@ -15,10 +19,17 @@ import { getCmcPrices } from "./cmcData";
 import { buildReportData, generateReportTitle, generateReportContent } from "./reportGenerator";
 import { notifyOwner } from "./_core/notification";
 import { sendTelegramMessage, formatTelegramReport } from "./telegram";
-import { saveStockSnapshots, saveCryptoSnapshots, seedHoldingsIfEmpty } from "./db";
+import { saveStockSnapshots, saveCryptoSnapshots, seedHoldingsIfEmpty, hasSnapshotForDate } from "./db";
 import { ALL_STOCK_TICKERS, ALL_CRYPTO_SYMBOLS, DAT_COMPANIES, CRYPTO_ASSETS } from "@shared/datConfig";
 
 let lastDataRefresh = 0;
+
+/**
+ * Get today's date string in YYYY-MM-DD format (UTC)
+ */
+function getTodayUTC(): string {
+  return new Date().toISOString().split("T")[0];
+}
 
 /**
  * Force-refresh all data caches (stock + crypto via CMC)
@@ -71,7 +82,7 @@ async function saveDailySnapshot(): Promise<void> {
       getMcapData(),
     ]);
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayUTC();
 
     const stockRows = DAT_COMPANIES.map(company => {
       const data = stockDataMap.get(company.ticker);
@@ -135,6 +146,25 @@ async function saveDailySnapshot(): Promise<void> {
 }
 
 /**
+ * Catch-up mechanism: check if today's snapshot exists, take one if missing.
+ * This runs on startup and periodically to handle sandbox hibernation gaps.
+ */
+async function ensureTodaySnapshot(): Promise<void> {
+  try {
+    const today = getTodayUTC();
+    const exists = await hasSnapshotForDate(today);
+    if (!exists) {
+      console.log(`[Scheduler] No snapshot for ${today} — taking catch-up snapshot now`);
+      await saveDailySnapshot();
+    } else {
+      console.log(`[Scheduler] Snapshot for ${today} already exists — skipping`);
+    }
+  } catch (err) {
+    console.error("[Scheduler] Catch-up snapshot check failed:", (err as Error).message);
+  }
+}
+
+/**
  * Generate and send the daily report via Manus notification
  */
 async function sendDailyReport(): Promise<void> {
@@ -190,8 +220,9 @@ export function initScheduler(): void {
     refreshMcapData().catch(console.error);
   });
 
-  // 3. Daily snapshot at 21:30 UTC (05:30 AM SGT) — after US market close
-  cron.schedule("0 30 21 * * *", () => {
+  // 3. Daily snapshot at 00:00 UTC (08:00 AM SGT)
+  //    Also has catch-up mechanism on startup + every 30min data refresh
+  cron.schedule("0 0 0 * * *", () => {
     saveDailySnapshot().catch(console.error);
   });
 
@@ -205,7 +236,14 @@ export function initScheduler(): void {
   //   sendTelegramReport().catch(console.error);
   // });
 
-  // 6. Initial data load on startup (with 5s delay to let server stabilize)
+  // 6. Catch-up snapshot check every 30 minutes
+  //    If the cron at 00:00 UTC was missed due to hibernation,
+  //    this ensures we still get today's snapshot on the next wake-up
+  cron.schedule("0 5,35 * * * *", () => {
+    ensureTodaySnapshot().catch(console.error);
+  });
+
+  // 7. Initial data load on startup (with 5s delay to let server stabilize)
   setTimeout(async () => {
     try {
       console.log("[Scheduler] Pre-warming MCAP data...");
@@ -222,6 +260,10 @@ export function initScheduler(): void {
       }));
       const seeded = await seedHoldingsIfEmpty(companies);
       if (seeded > 0) console.log(`[Scheduler] Seeded ${seeded} company holdings`);
+
+      // Catch-up: ensure today's snapshot exists
+      console.log("[Scheduler] Running startup catch-up snapshot check...");
+      await ensureTodaySnapshot();
     } catch (err) {
       console.error("[Scheduler] Initial data load failed:", (err as Error).message);
     }
@@ -230,7 +272,7 @@ export function initScheduler(): void {
   console.log("[Scheduler] Scheduled tasks:");
   console.log("  - Data refresh: every 30 min");
   console.log("  - MCAP refresh: every 2 hours");
-  console.log("  - Daily snapshot: 21:30 UTC (05:30 SGT)");
+  console.log("  - Daily snapshot: 00:00 UTC (08:00 SGT) + catch-up every 30 min");
   console.log("  - Daily report (Manus): 21:00 UTC (05:00 SGT)");
   console.log("  - Daily report (Telegram): DISABLED");
 }

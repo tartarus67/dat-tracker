@@ -57,6 +57,7 @@ vi.mock("./db", () => ({
   saveStockSnapshots: vi.fn().mockResolvedValue(31),
   saveCryptoSnapshots: vi.fn().mockResolvedValue(14),
   seedHoldingsIfEmpty: vi.fn().mockResolvedValue(0),
+  hasSnapshotForDate: vi.fn().mockResolvedValue(false),
 }));
 
 import cron from "node-cron";
@@ -72,10 +73,10 @@ describe("scheduler", () => {
     vi.useRealTimers();
   });
 
-  it("registers four cron schedules on init (Telegram disabled)", () => {
+  it("registers five cron schedules on init (Telegram disabled, catch-up added)", () => {
     initScheduler();
-    // 4 cron.schedule calls: data refresh, mcap refresh, daily snapshot, manus report
-    expect(cron.schedule).toHaveBeenCalledTimes(4);
+    // 5 cron.schedule calls: data refresh, mcap refresh, daily snapshot, manus report, catch-up
+    expect(cron.schedule).toHaveBeenCalledTimes(5);
   });
 
   it("schedules data refresh every 30 minutes", () => {
@@ -90,10 +91,10 @@ describe("scheduler", () => {
     expect(calls[1][0]).toBe("0 0 */2 * * *");
   });
 
-  it("schedules daily snapshot at 21:30 UTC (05:30 SGT)", () => {
+  it("schedules daily snapshot at 00:00 UTC (08:00 SGT)", () => {
     initScheduler();
     const calls = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls;
-    expect(calls[2][0]).toBe("0 30 21 * * *");
+    expect(calls[2][0]).toBe("0 0 0 * * *");
   });
 
   it("schedules daily Manus report at 21:00 UTC (05:00 SGT)", () => {
@@ -102,10 +103,15 @@ describe("scheduler", () => {
     expect(calls[3][0]).toBe("0 0 21 * * *");
   });
 
+  it("schedules catch-up snapshot check every 30 minutes", () => {
+    initScheduler();
+    const calls = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[4][0]).toBe("0 5,35 * * * *");
+  });
+
   it("Telegram report is disabled", () => {
     initScheduler();
     const calls = (cron.schedule as ReturnType<typeof vi.fn>).mock.calls;
-    // Telegram cron should NOT be registered
     const cronExpressions = calls.map((c: unknown[]) => c[0]);
     expect(cronExpressions).not.toContain("0 0 2 * * *");
   });

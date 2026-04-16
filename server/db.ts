@@ -167,6 +167,17 @@ export async function getAllStockSnapshots() {
     .orderBy(asc(stockSnapshots.snapshotDate), asc(stockSnapshots.ticker));
 }
 
+/**
+ * Check if a snapshot exists for a given date
+ */
+export async function hasSnapshotForDate(dateStr: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db.select({ id: stockSnapshots.id }).from(stockSnapshots)
+    .where(eq(stockSnapshots.snapshotDate, dateStr)).limit(1);
+  return rows.length > 0;
+}
+
 // ─── Holdings ────────────────────────────────────────────────
 
 /**
