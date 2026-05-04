@@ -171,6 +171,11 @@ export default function Dashboard() {
     refetchInterval: 5 * 60 * 1000,
   });
 
+  // Fetch latest snapshot date for health indicator
+  const { data: snapshotDates } = trpc.dat.getSnapshotDates.useQuery(undefined, {
+    staleTime: 10 * 60 * 1000,
+  });
+
   const sendReport = trpc.dat.sendReport.useMutation({
     onSuccess: (result) => {
       if (result.success) {
@@ -267,6 +272,17 @@ export default function Dashboard() {
                 Updated {new Date(data.lastUpdated).toLocaleTimeString()}
               </span>
             )}
+            {snapshotDates && snapshotDates.length > 0 && (() => {
+              const lastDate = snapshotDates[0];
+              const lastSnapshotTime = new Date(lastDate + "T00:00:00Z").getTime();
+              const hoursAgo = Math.floor((Date.now() - lastSnapshotTime) / (1000 * 60 * 60));
+              const isStale = hoursAgo > 36; // more than 36h means missed a day
+              return (
+                <span className={`text-xs font-mono px-2 py-0.5 rounded ${isStale ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"}`}>
+                  Snapshot: {lastDate} ({hoursAgo < 24 ? "today" : `${Math.floor(hoursAgo / 24)}d ago`})
+                </span>
+              );
+            })()}
             <button
               onClick={() => sendReport.mutate()}
               disabled={sendReport.isPending}
