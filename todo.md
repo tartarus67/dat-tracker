@@ -62,3 +62,6 @@
 - [x] Add Top 5, Top 10, Bottom 5, Bottom 10 quick filters
 - [x] Add date range filter with calendar start/end date picker
 - [x] Fix daily snapshot automation - stopped after April 13th, set to 8:00 AM SGT (00:00 UTC)
+- [ ] Fix snapshot automation: use Manus scheduled task (external cron) instead of in-process node-cron
+- [ ] Add /api/scheduled/snapshot endpoint for external trigger
+- [ ] Create Manus scheduled task to POST daily at 8AM SGT
