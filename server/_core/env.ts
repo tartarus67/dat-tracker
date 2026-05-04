@@ -9,4 +9,5 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   cmcApiKey: process.env.CMC_API_KEY ?? "",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
+  publicApiKey: process.env.PUBLIC_API_KEY ?? "",
 };

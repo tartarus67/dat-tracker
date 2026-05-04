@@ -119,6 +119,111 @@ async function startServer() {
     }
   });
 
+  // ─── Public JSON API (API key auth, for Claude/external consumers) ───
+  const { ENV } = await import("./env");
+  const apiKeyAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = req.query.key || req.headers["x-api-key"];
+    if (!ENV.publicApiKey) {
+      res.status(503).json({ error: "API key not configured on server" });
+      return;
+    }
+    if (key !== ENV.publicApiKey) {
+      res.status(401).json({ error: "Invalid API key" });
+      return;
+    }
+    next();
+  };
+
+  // GET /api/public/dashboard - full live dashboard data
+  app.get("/api/public/dashboard", apiKeyAuth, async (_req, res) => {
+    try {
+      const { fetchAllStockData } = await import("../datData");
+      const { getCmcPrices } = await import("../cmcData");
+      const { getMcapData } = await import("../mcapData");
+      const { ALL_STOCK_TICKERS, ALL_CRYPTO_SYMBOLS, DAT_COMPANIES, CRYPTO_ASSETS } = await import("@shared/datConfig");
+
+      const [stockDataMap, cmcData, mcapData] = await Promise.all([
+        fetchAllStockData(ALL_STOCK_TICKERS),
+        getCmcPrices(ALL_CRYPTO_SYMBOLS),
+        getMcapData(),
+      ]);
+
+      const stocks = DAT_COMPANIES.map(company => {
+        const data = stockDataMap.get(company.ticker);
+        const mcap = mcapData[company.ticker];
+        const cmcToken = cmcData.get(company.datAsset);
+        const tokenPrice = cmcToken?.price || 0;
+        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        const nav = navRaw / 1e6;
+        const mcapValue = (mcap?.marketCap || 0) / 1e6;
+        const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
+        return {
+          company: company.company, ticker: company.ticker,
+          category: company.category, datAsset: company.datAsset,
+          holdings: company.holdings,
+          price: data?.quote.price || 0, change1d: data?.quote.change1d || 0,
+          change7d: data?.change7d || 0, change30d: data?.change30d || 0,
+          tokenPrice, tokenPrice7d: cmcToken?.change7d || 0, tokenPrice30d: cmcToken?.change30d || 0,
+          mcap: mcapValue, nav, mNAV,
+          vol24h: data?.volumeStats.vol24h || 0, vol1dPct: data?.volumeStats.vol1dPct || 0,
+          vol7dAvg: data?.volumeStats.vol7dAvg || 0, vol7dPct: data?.volumeStats.vol7dPct || 0,
+          vol30dAvg: data?.volumeStats.vol30dAvg || 0, vol30dPct: data?.volumeStats.vol30dPct || 0,
+        };
+      });
+
+      const crypto = CRYPTO_ASSETS.map(asset => {
+        const cmc = cmcData.get(asset.symbol);
+        return {
+          symbol: asset.symbol, name: cmc?.name || asset.name,
+          price: cmc?.price || 0, change1d: cmc?.change24h || 0,
+          change7d: cmc?.change7d || 0, change30d: cmc?.change30d || 0,
+          volume: cmc?.volume24h || 0, marketCap: cmc?.marketCap || 0,
+        };
+      });
+
+      res.json({ stocks, crypto, lastUpdated: Date.now() });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/public/snapshot/:date - snapshot for a specific date
+  app.get("/api/public/snapshot/:date", apiKeyAuth, async (req, res) => {
+    try {
+      const { getStockSnapshotsByDate, getCryptoSnapshotsByDate } = await import("../db");
+      const dateStr = req.params.date;
+      const [stocks, crypto] = await Promise.all([
+        getStockSnapshotsByDate(dateStr),
+        getCryptoSnapshotsByDate(dateStr),
+      ]);
+      res.json({ date: dateStr, stocks, crypto });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/public/snapshots - list available snapshot dates
+  app.get("/api/public/snapshots", apiKeyAuth, async (_req, res) => {
+    try {
+      const { getSnapshotDates } = await import("../db");
+      const dates = await getSnapshotDates();
+      res.json({ dates });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/public/trends - all historical stock data for trend analysis
+  app.get("/api/public/trends", apiKeyAuth, async (_req, res) => {
+    try {
+      const { getAllStockSnapshots } = await import("../db");
+      const data = await getAllStockSnapshots();
+      res.json({ data });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

@@ -67,3 +67,4 @@
 - [x] Create Manus scheduled task to POST daily at 8AM SGT
 - [x] Backfill snapshots for April 17 – May 3 with current data
 - [x] Add "last snapshot: X hours ago" health indicator to dashboard header
+- [x] Add public JSON API endpoints with API key auth for external consumers (Claude)
