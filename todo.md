@@ -9,14 +9,14 @@
 - [x] Add category filtering (Majors vs Alts)
 - [x] Add sorting functionality to tables
 - [x] Build daily summary report generation endpoint
-- [ ] Implement email notification system (victor.x@aethir.com) [pending API key]
+- [-] Implement email notification system (victor.x@aethir.com) [backlog - pending user request]
 - [x] Implement Telegram notification system (@nvxin)
 - [x] Add auto-refresh mechanism for live data (5-min interval)
 - [x] Write vitest tests for API routes
 - [x] Build report generation logic (daily summary format)
 - [x] Add tRPC endpoint to trigger report manually
 - [x] Send first test report via Manus built-in notification
-- [ ] Add report page to view reports in the dashboard
+- [-] Add report page to view reports in the dashboard [backlog - pending user request]
 - [x] Update dashboard columns to match spreadsheet exactly (19 columns)
 - [x] Add Token Price, Token Price 7d%, Token Price 30d% columns
 - [x] Add NAV ($M) calculation (holdings x token price)
