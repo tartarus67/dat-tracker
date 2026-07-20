@@ -82,8 +82,14 @@ export const appRouter = router({
         const tokenPrice7d = cmcToken?.change7d || 0;
         const tokenPrice30d = cmcToken?.change30d || 0;
 
-        const navRaw = company.holdings > 0 && tokenPrice > 0
+        let navRaw = company.holdings > 0 && tokenPrice > 0
           ? company.holdings * tokenPrice : 0;
+        // Add secondary asset value (e.g., ORBS holds both WLD and ETH)
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          const secondaryPrice = secondaryToken?.price || 0;
+          navRaw += company.secondaryHoldings * secondaryPrice;
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
@@ -200,7 +206,13 @@ export const appRouter = router({
         const mcap = mcapData[company.ticker];
         const cmcToken = cmcData.get(company.datAsset);
         const tokenPrice = cmcToken?.price || 0;
-        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        let navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        // Add secondary asset value (e.g., ORBS holds both WLD and ETH)
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          const secondaryPrice = secondaryToken?.price || 0;
+          navRaw += company.secondaryHoldings * secondaryPrice;
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;

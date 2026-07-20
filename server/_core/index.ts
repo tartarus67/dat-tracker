@@ -78,7 +78,11 @@ async function startServer() {
         const mcap = mcapData[company.ticker];
         const cmcToken = cmcData.get(company.datAsset);
         const tokenPrice = cmcToken?.price || 0;
-        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        let navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          navRaw += company.secondaryHoldings * (secondaryToken?.price || 0);
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
@@ -153,7 +157,11 @@ async function startServer() {
         const mcap = mcapData[company.ticker];
         const cmcToken = cmcData.get(company.datAsset);
         const tokenPrice = cmcToken?.price || 0;
-        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        let navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          navRaw += company.secondaryHoldings * (secondaryToken?.price || 0);
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;

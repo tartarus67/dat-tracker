@@ -76,3 +76,7 @@
 - [x] Update navConfig.ts holdings to match Google Sheet (AGPU, MSTR, MARA, MTPLF, ORBS, SBET)
 - [x] Add 7 missing companies to navConfig.ts (DFDV, UPXI, FWDI, HSDT, STKE, IPST, BMNR)
 - [x] Add GPUS holdings (900 BTC) and ATON (12.8M TON)
+- [x] ORBS (Eightco Holdings): Add dual-asset support — holds both 283,452,700 WLD AND 16,278 ETH
+- [x] Add secondaryAsset/secondaryHoldings fields to DATCompany type
+- [x] Update NAV calculation in all locations (routers.ts, _core/index.ts, reportGenerator.ts) to sum both assets
+- [x] Fix 117 historical snapshots: recalculate ORBS NAV to include ETH position (~$30-38M addition)
