@@ -73,3 +73,6 @@
 - [x] Update company names: Sharps Technology→Sky AI Inc, Strategy→Microstrategy
 - [x] Add DATA crypto asset to CRYPTO_ASSETS list
 - [x] Ensure trend chart merges old ticker data with new ticker for continuity
+- [x] Update navConfig.ts holdings to match Google Sheet (AGPU, MSTR, MARA, MTPLF, ORBS, SBET)
+- [x] Add 7 missing companies to navConfig.ts (DFDV, UPXI, FWDI, HSDT, STKE, IPST, BMNR)
+- [x] Add GPUS holdings (900 BTC) and ATON (12.8M TON)
