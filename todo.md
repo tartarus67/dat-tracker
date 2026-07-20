@@ -68,3 +68,8 @@
 - [x] Backfill snapshots for April 17 – May 3 with current data
 - [x] Add "last snapshot: X hours ago" health indicator to dashboard header
 - [x] Add public JSON API endpoints with API key auth for external consumers (Claude)
+- [x] Update tickers: STSS→SKYA, ZBAI→AUC, FORD→FWDI (preserve previousTicker for historical data)
+- [x] Update assets: GPUS from XRP→BTC, IPST from IP→DATA (preserve previousAsset)
+- [x] Update company names: Sharps Technology→Sky AI Inc, Strategy→Microstrategy
+- [x] Add DATA crypto asset to CRYPTO_ASSETS list
+- [x] Ensure trend chart merges old ticker data with new ticker for continuity

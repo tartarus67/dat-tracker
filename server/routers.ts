@@ -267,12 +267,42 @@ export const appRouter = router({
           getStockSnapshotsByDate(input.date),
           getCryptoSnapshotsByDate(input.date),
         ]);
-        return { date: input.date, stocks, crypto };
+        // Remap old tickers/assets to current values for display consistency
+        const { TICKER_HISTORY, DAT_COMPANIES } = await import("../shared/datConfig");
+        const reverseMap: Record<string, string> = {};
+        for (const [current, oldTickers] of Object.entries(TICKER_HISTORY)) {
+          for (const old of oldTickers) reverseMap[old] = current;
+        }
+        // Build asset map: ticker → current datAsset
+        const assetMap: Record<string, string> = {};
+        for (const c of DAT_COMPANIES) assetMap[c.ticker] = c.datAsset;
+        const mappedStocks = stocks.map(row => {
+          const newTicker = reverseMap[row.ticker] || row.ticker;
+          const newAsset = assetMap[newTicker] || row.datAsset;
+          return { ...row, ticker: newTicker, datAsset: newAsset };
+        });
+        return { date: input.date, stocks: mappedStocks, crypto };
       }),
 
     /** Get all stock snapshots for trend charts (all dates, all tickers) */
     getTrendData: publicProcedure.query(async () => {
-      return getAllStockSnapshots();
+      const snapshots = await getAllStockSnapshots();
+      // Merge historical data: rename old tickers/assets to current values for continuity
+      const { TICKER_HISTORY, DAT_COMPANIES } = await import("../shared/datConfig");
+      const reverseMap: Record<string, string> = {};
+      for (const [current, oldTickers] of Object.entries(TICKER_HISTORY)) {
+        for (const old of oldTickers) reverseMap[old] = current;
+      }
+      const assetMap: Record<string, string> = {};
+      for (const c of DAT_COMPANIES) assetMap[c.ticker] = c.datAsset;
+      return snapshots.map(row => {
+        const newTicker = reverseMap[row.ticker] || row.ticker;
+        const newAsset = assetMap[newTicker] || row.datAsset;
+        if (newTicker !== row.ticker || newAsset !== row.datAsset) {
+          return { ...row, ticker: newTicker, datAsset: newAsset };
+        }
+        return row;
+      });
     }),
 
     // ─── Holdings (Admin) ────────────────────────────────────────

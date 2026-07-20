@@ -20,7 +20,7 @@ export type NavCompany = {
  * Asset prices are fetched live from CoinMarketCap.
  */
 export const NAV_COMPANIES: NavCompany[] = [
-  { company: "Strategy Inc.", ticker: "MSTR", primaryAsset: "Bitcoin Treasury", assetSymbol: "BTC", holdings: 641692, otherAssets: 0, liabilities: 0 },
+  { company: "Microstrategy", ticker: "MSTR", primaryAsset: "Bitcoin Treasury", assetSymbol: "BTC", holdings: 641692, otherAssets: 0, liabilities: 0 },
   { company: "MARA Holdings, Inc.", ticker: "MARA", primaryAsset: "Bitcoin Miner", assetSymbol: "BTC", holdings: 53250, otherAssets: 0, liabilities: 0 },
   { company: "Twenty-One Capital (XXI)", ticker: "XXI", primaryAsset: "Bitcoin Treasury", assetSymbol: "BTC", holdings: 43514, otherAssets: 0, liabilities: 0 },
   { company: "Metaplanet Inc.", ticker: "MTPLF", primaryAsset: "Bitcoin Treasury", assetSymbol: "BTC", holdings: 30823, otherAssets: 0, liabilities: 0 },
@@ -42,10 +42,10 @@ export const NAV_COMPANIES: NavCompany[] = [
   { company: "Zero Stacks", ticker: "ZSTK", primaryAsset: "Treasury", assetSymbol: "0G", holdings: 122538335, otherAssets: 0, liabilities: 0 },
   { company: "SUI Group Holdings", ticker: "SUIG", primaryAsset: "Treasury", assetSymbol: "SUI", holdings: 105393693, otherAssets: 0, liabilities: 0 },
   { company: "AXE Compute", ticker: "AGPU", primaryAsset: "Treasury", assetSymbol: "ATH", holdings: 4961016949, otherAssets: 0, liabilities: 0 },
-  { company: "Sharps Technology", ticker: "STSS", primaryAsset: "Treasury", assetSymbol: "SOL", holdings: 2000000, otherAssets: 0, liabilities: 0 },
+  { company: "Sky AI Inc", ticker: "SKYA", primaryAsset: "Treasury", assetSymbol: "SOL", holdings: 2000000, otherAssets: 0, liabilities: 0 },
   { company: "TAO Synergies", ticker: "TAOX", primaryAsset: "Treasury", assetSymbol: "TAO", holdings: 54000, otherAssets: 0, liabilities: 0 },
-  { company: "ATIF Holdings", ticker: "ZBAI", primaryAsset: "Treasury", assetSymbol: "DOGE", holdings: 0, otherAssets: 0, liabilities: 0 },
-  { company: "Hyperscale Data Inc", ticker: "GPUS", primaryAsset: "Treasury", assetSymbol: "XRP", holdings: 0, otherAssets: 0, liabilities: 0 },
+  { company: "ATIF Holdings", ticker: "AUC", primaryAsset: "Treasury", assetSymbol: "DOGE", holdings: 0, otherAssets: 0, liabilities: 0 },
+  { company: "Hyperscale Data Inc", ticker: "GPUS", primaryAsset: "Treasury", assetSymbol: "BTC", holdings: 0, otherAssets: 0, liabilities: 0 },
 ];
 
 /** All unique asset symbols needed for NAV price lookups */
