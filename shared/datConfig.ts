@@ -57,7 +57,7 @@ export const DAT_COMPANIES: DATCompany[] = [
   { company: "GD Culture", ticker: "GDC", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 7500 },
   { company: "Eightco Holdings", ticker: "ORBS", category: "Alts", datAsset: "WLD", cryptoYahooSymbol: "WLD-USD", holdings: 283452700 },
   { company: "Predictive Oncology", ticker: "AGPU", category: "Alts", datAsset: "ATH", cryptoYahooSymbol: "ATH-USD", holdings: 6166000000 },
-  { company: "AlphaTON Capital Corp", ticker: "ATON", category: "Alts", datAsset: "TON", cryptoYahooSymbol: "TON11419-USD", holdings: 12878195, previousCompany: "AlphaTON Capital" },
+  { company: "Alpha Compute Corp", ticker: "ALP", category: "Alts", datAsset: "TON", cryptoYahooSymbol: "TON11419-USD", holdings: 12878195, previousTicker: "ATON", previousCompany: "AlphaTON Capital Corp" },
   { company: "Zero Stack", ticker: "ZSTK", category: "Alts", datAsset: "0G", cryptoYahooSymbol: "0G-USD", holdings: 122538335 },
   { company: "CleanSpark Inc.", ticker: "CLSK", category: "Majors", datAsset: "BTC", cryptoYahooSymbol: "BTC-USD", holdings: 13011 },
 ];

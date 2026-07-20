@@ -56,7 +56,7 @@ export const NAV_COMPANIES: NavCompany[] = [
   { company: "AXE Compute", ticker: "AGPU", primaryAsset: "Treasury", assetSymbol: "ATH", holdings: 6166000000, otherAssets: 0, liabilities: 0 },
   { company: "TAO Synergies", ticker: "TAOX", primaryAsset: "Treasury", assetSymbol: "TAO", holdings: 54000, otherAssets: 0, liabilities: 0 },
   { company: "IP Strategy", ticker: "IPST", primaryAsset: "Treasury", assetSymbol: "DATA", holdings: 329000000, otherAssets: 0, liabilities: 0 },
-  { company: "AlphaTON Capital Corp", ticker: "ATON", primaryAsset: "Treasury", assetSymbol: "TON", holdings: 12878195, otherAssets: 0, liabilities: 0 },
+  { company: "Alpha Compute Corp", ticker: "ALP", primaryAsset: "Treasury", assetSymbol: "TON", holdings: 12878195, otherAssets: 0, liabilities: 0 },
   { company: "ATIF Holdings", ticker: "AUC", primaryAsset: "Treasury", assetSymbol: "DOGE", holdings: 0, otherAssets: 0, liabilities: 0 },
 ];
 
