@@ -119,6 +119,12 @@ scripts/                → One-off data fix scripts
 3. If the token isn't already tracked, add it to the crypto symbols list in `server/cmcData.ts`
 4. Run `pnpm dev` — the next snapshot cycle will pick it up automatically
 
+## Access Control
+
+The dashboard is **publicly viewable** — no login required to view data. Only the admin holdings page (`/admin/holdings`) requires authentication.
+
+Visibility can be toggled in the Manus Management UI under Settings > General.
+
 ## License
 
 Private.

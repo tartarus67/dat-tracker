@@ -80,3 +80,6 @@
 - [x] Add secondaryAsset/secondaryHoldings fields to DATCompany type
 - [x] Update NAV calculation in all locations (routers.ts, _core/index.ts, reportGenerator.ts) to sum both assets
 - [x] Fix 117 historical snapshots: recalculate ORBS NAV to include ETH position (~$30-38M addition)
+- [x] Add DATA (IP token) to crypto snapshot fetcher — already working (CMC ID 35626, same as IP after rebrand)
+- [x] Create ENV_SETUP.md with all env vars and setup instructions for collaborators
+- [x] Confirm public read-only access — dashboard already public, only /admin/holdings requires auth
