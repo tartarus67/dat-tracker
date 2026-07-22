@@ -83,3 +83,6 @@
 - [x] Add DATA (IP token) to crypto snapshot fetcher — already working (CMC ID 35626, same as IP after rebrand)
 - [x] Create ENV_SETUP.md with all env vars and setup instructions for collaborators
 - [x] Confirm public read-only access — dashboard already public, only /admin/holdings requires auth
+- [x] Add CHANGELOG.md tracking major data model changes
+- [x] Add data freshness footer (sources, refresh interval, last refresh time, latest snapshot date)
+- [ ] Customize domain prefix (user handling in Management UI)

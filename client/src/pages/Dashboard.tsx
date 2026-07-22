@@ -606,6 +606,28 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Data freshness footer for external viewers */}
+      <footer className="mt-8 pb-6 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span>Data sources: CoinMarketCap (crypto) · Yahoo Finance (stocks)</span>
+            <span>Refresh: every 30 min</span>
+          </div>
+          <div className="flex items-center gap-4">
+            {data?.lastUpdated && (
+              <span className="font-mono">
+                Last refresh: {new Date(data.lastUpdated).toLocaleString()}
+              </span>
+            )}
+            {snapshotDates && snapshotDates.length > 0 && (
+              <span className="font-mono">
+                Latest snapshot: {snapshotDates[0]}
+              </span>
+            )}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
