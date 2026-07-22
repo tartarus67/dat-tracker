@@ -43,6 +43,8 @@ const CMC_ID_MAP: Record<string, number> = {
   ATH: 30083,   // Aethir
   IP: 35626,    // Story Protocol
   "0G": 38337,  // 0G (Zero Gravity)
+  TON: 11419,   // Toncoin (now Gram on CMC)
+  DATA: 35626,  // Data Network (prev Story Protocol $IP)
 };
 
 let tokenCache: Map<string, CmcTokenData> = new Map();

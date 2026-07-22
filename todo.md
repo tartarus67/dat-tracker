@@ -9,14 +9,14 @@
 - [x] Add category filtering (Majors vs Alts)
 - [x] Add sorting functionality to tables
 - [x] Build daily summary report generation endpoint
-- [ ] Implement email notification system (victor.x@aethir.com) [pending API key]
+- [-] Implement email notification system (victor.x@aethir.com) [backlog - pending user request]
 - [x] Implement Telegram notification system (@nvxin)
 - [x] Add auto-refresh mechanism for live data (5-min interval)
 - [x] Write vitest tests for API routes
 - [x] Build report generation logic (daily summary format)
 - [x] Add tRPC endpoint to trigger report manually
 - [x] Send first test report via Manus built-in notification
-- [ ] Add report page to view reports in the dashboard
+- [-] Add report page to view reports in the dashboard [backlog - pending user request]
 - [x] Update dashboard columns to match spreadsheet exactly (19 columns)
 - [x] Add Token Price, Token Price 7d%, Token Price 30d% columns
 - [x] Add NAV ($M) calculation (holdings x token price)
@@ -68,3 +68,15 @@
 - [x] Backfill snapshots for April 17 – May 3 with current data
 - [x] Add "last snapshot: X hours ago" health indicator to dashboard header
 - [x] Add public JSON API endpoints with API key auth for external consumers (Claude)
+- [x] Update tickers: STSS→SKYA, ZBAI→AUC, FORD→FWDI (preserve previousTicker for historical data)
+- [x] Update assets: GPUS from XRP→BTC, IPST from IP→DATA (preserve previousAsset)
+- [x] Update company names: Sharps Technology→Sky AI Inc, Strategy→Microstrategy
+- [x] Add DATA crypto asset to CRYPTO_ASSETS list
+- [x] Ensure trend chart merges old ticker data with new ticker for continuity
+- [x] Update navConfig.ts holdings to match Google Sheet (AGPU, MSTR, MARA, MTPLF, ORBS, SBET)
+- [x] Add 7 missing companies to navConfig.ts (DFDV, UPXI, FWDI, HSDT, STKE, IPST, BMNR)
+- [x] Add GPUS holdings (900 BTC) and ATON (12.8M TON)
+- [x] ORBS (Eightco Holdings): Add dual-asset support — holds both 283,452,700 WLD AND 16,278 ETH
+- [x] Add secondaryAsset/secondaryHoldings fields to DATCompany type
+- [x] Update NAV calculation in all locations (routers.ts, _core/index.ts, reportGenerator.ts) to sum both assets
+- [x] Fix 117 historical snapshots: recalculate ORBS NAV to include ETH position (~$30-38M addition)

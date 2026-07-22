@@ -82,8 +82,14 @@ export const appRouter = router({
         const tokenPrice7d = cmcToken?.change7d || 0;
         const tokenPrice30d = cmcToken?.change30d || 0;
 
-        const navRaw = company.holdings > 0 && tokenPrice > 0
+        let navRaw = company.holdings > 0 && tokenPrice > 0
           ? company.holdings * tokenPrice : 0;
+        // Add secondary asset value (e.g., ORBS holds both WLD and ETH)
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          const secondaryPrice = secondaryToken?.price || 0;
+          navRaw += company.secondaryHoldings * secondaryPrice;
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
@@ -200,7 +206,13 @@ export const appRouter = router({
         const mcap = mcapData[company.ticker];
         const cmcToken = cmcData.get(company.datAsset);
         const tokenPrice = cmcToken?.price || 0;
-        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        let navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        // Add secondary asset value (e.g., ORBS holds both WLD and ETH)
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          const secondaryPrice = secondaryToken?.price || 0;
+          navRaw += company.secondaryHoldings * secondaryPrice;
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
@@ -267,12 +279,42 @@ export const appRouter = router({
           getStockSnapshotsByDate(input.date),
           getCryptoSnapshotsByDate(input.date),
         ]);
-        return { date: input.date, stocks, crypto };
+        // Remap old tickers/assets to current values for display consistency
+        const { TICKER_HISTORY, DAT_COMPANIES } = await import("../shared/datConfig");
+        const reverseMap: Record<string, string> = {};
+        for (const [current, oldTickers] of Object.entries(TICKER_HISTORY)) {
+          for (const old of oldTickers) reverseMap[old] = current;
+        }
+        // Build asset map: ticker → current datAsset
+        const assetMap: Record<string, string> = {};
+        for (const c of DAT_COMPANIES) assetMap[c.ticker] = c.datAsset;
+        const mappedStocks = stocks.map(row => {
+          const newTicker = reverseMap[row.ticker] || row.ticker;
+          const newAsset = assetMap[newTicker] || row.datAsset;
+          return { ...row, ticker: newTicker, datAsset: newAsset };
+        });
+        return { date: input.date, stocks: mappedStocks, crypto };
       }),
 
     /** Get all stock snapshots for trend charts (all dates, all tickers) */
     getTrendData: publicProcedure.query(async () => {
-      return getAllStockSnapshots();
+      const snapshots = await getAllStockSnapshots();
+      // Merge historical data: rename old tickers/assets to current values for continuity
+      const { TICKER_HISTORY, DAT_COMPANIES } = await import("../shared/datConfig");
+      const reverseMap: Record<string, string> = {};
+      for (const [current, oldTickers] of Object.entries(TICKER_HISTORY)) {
+        for (const old of oldTickers) reverseMap[old] = current;
+      }
+      const assetMap: Record<string, string> = {};
+      for (const c of DAT_COMPANIES) assetMap[c.ticker] = c.datAsset;
+      return snapshots.map(row => {
+        const newTicker = reverseMap[row.ticker] || row.ticker;
+        const newAsset = assetMap[newTicker] || row.datAsset;
+        if (newTicker !== row.ticker || newAsset !== row.datAsset) {
+          return { ...row, ticker: newTicker, datAsset: newAsset };
+        }
+        return row;
+      });
     }),
 
     // ─── Holdings (Admin) ────────────────────────────────────────

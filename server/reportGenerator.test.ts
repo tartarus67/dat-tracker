@@ -54,7 +54,7 @@ function createMockReportData(): ReportData {
         error: false,
       },
       {
-        ticker: "FORD",
+        ticker: "FWDI",
         company: "Forward Industries",
         category: "Majors",
         datAsset: "SOL",
@@ -78,7 +78,7 @@ function createMockReportData(): ReportData {
         error: true,
       },
       {
-        ticker: "ZBAI",
+        ticker: "AUC",
         company: "ATIF Holdings",
         category: "Alts",
         datAsset: "DOGE",
@@ -197,7 +197,7 @@ describe("generateReportContent", () => {
     expect(content).toContain("MAJORS");
     expect(content).toContain("ALTS");
     expect(content).toContain("MSTR");
-    expect(content).toContain("ZBAI");
+    expect(content).toContain("AUC");
   });
 
   it("includes crypto section", () => {
@@ -215,7 +215,7 @@ describe("generateReportContent", () => {
     const content = generateReportContent(data);
 
     const lines = content.split("\n");
-    const fordLine = lines.find(l => l.includes("FORD"));
+    const fordLine = lines.find(l => l.includes("FWDI"));
     expect(fordLine).toBeDefined();
     expect(fordLine).toContain("N/A");
   });

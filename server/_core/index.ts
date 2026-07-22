@@ -78,7 +78,11 @@ async function startServer() {
         const mcap = mcapData[company.ticker];
         const cmcToken = cmcData.get(company.datAsset);
         const tokenPrice = cmcToken?.price || 0;
-        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        let navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          navRaw += company.secondaryHoldings * (secondaryToken?.price || 0);
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
@@ -153,7 +157,11 @@ async function startServer() {
         const mcap = mcapData[company.ticker];
         const cmcToken = cmcData.get(company.datAsset);
         const tokenPrice = cmcToken?.price || 0;
-        const navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        let navRaw = company.holdings > 0 && tokenPrice > 0 ? company.holdings * tokenPrice : 0;
+        if (company.secondaryAsset && company.secondaryHoldings) {
+          const secondaryToken = cmcData.get(company.secondaryAsset);
+          navRaw += company.secondaryHoldings * (secondaryToken?.price || 0);
+        }
         const nav = navRaw / 1e6;
         const mcapValue = (mcap?.marketCap || 0) / 1e6;
         const mNAV = nav > 0 && mcapValue > 0 ? mcapValue / nav : 0;
@@ -191,12 +199,25 @@ async function startServer() {
   app.get("/api/public/snapshot/:date", apiKeyAuth, async (req, res) => {
     try {
       const { getStockSnapshotsByDate, getCryptoSnapshotsByDate } = await import("../db");
+      const { TICKER_HISTORY, DAT_COMPANIES } = await import("@shared/datConfig");
       const dateStr = req.params.date;
       const [stocks, crypto] = await Promise.all([
         getStockSnapshotsByDate(dateStr),
         getCryptoSnapshotsByDate(dateStr),
       ]);
-      res.json({ date: dateStr, stocks, crypto });
+      // Remap old tickers to current
+      const reverseMap: Record<string, string> = {};
+      for (const [current, oldTickers] of Object.entries(TICKER_HISTORY)) {
+        for (const old of oldTickers) reverseMap[old] = current;
+      }
+      const assetMap: Record<string, string> = {};
+      for (const c of DAT_COMPANIES) assetMap[c.ticker] = c.datAsset;
+      const mappedStocks = stocks.map(row => {
+        const newTicker = reverseMap[row.ticker] || row.ticker;
+        const newAsset = assetMap[newTicker] || row.datAsset;
+        return { ...row, ticker: newTicker, datAsset: newAsset };
+      });
+      res.json({ date: dateStr, stocks: mappedStocks, crypto });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -217,8 +238,62 @@ async function startServer() {
   app.get("/api/public/trends", apiKeyAuth, async (_req, res) => {
     try {
       const { getAllStockSnapshots } = await import("../db");
+      const { TICKER_HISTORY, DAT_COMPANIES } = await import("@shared/datConfig");
       const data = await getAllStockSnapshots();
-      res.json({ data });
+      // Remap old tickers to current
+      const reverseMap: Record<string, string> = {};
+      for (const [current, oldTickers] of Object.entries(TICKER_HISTORY)) {
+        for (const old of oldTickers) reverseMap[old] = current;
+      }
+      const assetMap: Record<string, string> = {};
+      for (const c of DAT_COMPANIES) assetMap[c.ticker] = c.datAsset;
+      const mapped = data.map(row => {
+        const newTicker = reverseMap[row.ticker] || row.ticker;
+        const newAsset = assetMap[newTicker] || row.datAsset;
+        return newTicker !== row.ticker || newAsset !== row.datAsset
+          ? { ...row, ticker: newTicker, datAsset: newAsset } : row;
+      });
+      res.json({ data: mapped });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/public/nav - Crypto Treasury NAV data (live prices)
+  app.get("/api/public/nav", apiKeyAuth, async (_req, res) => {
+    try {
+      const { getCmcPrices } = await import("../cmcData");
+      const { NAV_COMPANIES, NAV_ASSET_SYMBOLS } = await import("@shared/navConfig");
+      const { getMcapData } = await import("../mcapData");
+      const cmcData = await getCmcPrices(NAV_ASSET_SYMBOLS);
+      const mcapData = await getMcapData();
+
+      const rows = NAV_COMPANIES.map(company => {
+        const cmc = cmcData.get(company.assetSymbol);
+        const tokenPrice = cmc?.price || 0;
+        const navRaw = company.holdings * tokenPrice;
+        const nav = navRaw / 1e6;
+        const mcap = (mcapData[company.ticker]?.marketCap || 0) / 1e6;
+        const mNAV = nav > 0 && mcap > 0 ? mcap / nav : 0;
+        return {
+          company: company.company, ticker: company.ticker,
+          primaryAsset: company.primaryAsset, assetSymbol: company.assetSymbol,
+          holdings: company.holdings, tokenPrice,
+          nav, mcap, mNAV,
+          otherAssets: company.otherAssets, liabilities: company.liabilities,
+        };
+      });
+      res.json({ nav: rows, lastUpdated: Date.now() });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/public/config - current DAT company config (tickers, categories, assets, holdings)
+  app.get("/api/public/config", apiKeyAuth, async (_req, res) => {
+    try {
+      const { DAT_COMPANIES, CRYPTO_ASSETS } = await import("@shared/datConfig");
+      res.json({ companies: DAT_COMPANIES, cryptoAssets: CRYPTO_ASSETS });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
